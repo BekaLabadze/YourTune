@@ -6,6 +6,12 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		045324CE2D33ACD0007F7426 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 045324CD2D33ACD0007F7426 /* FirebaseAuth */; };
+		045324D02D33ACD3007F7426 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 045324CF2D33ACD3007F7426 /* FirebaseCore */; };
+		045324D22D33ACD9007F7426 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 045324D12D33ACD9007F7426 /* FirebaseFirestore */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		0453245F2D31C9DA007F7426 /* YourTune.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = YourTune.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +29,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				045324D02D33ACD3007F7426 /* FirebaseCore in Frameworks */,
+				045324CE2D33ACD0007F7426 /* FirebaseAuth in Frameworks */,
+				045324D22D33ACD9007F7426 /* FirebaseFirestore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -33,6 +42,7 @@
 			isa = PBXGroup;
 			children = (
 				045324612D31C9DA007F7426 /* YourTune */,
+				045324CC2D33ACD0007F7426 /* Frameworks */,
 				045324602D31C9DA007F7426 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -43,6 +53,13 @@
 				0453245F2D31C9DA007F7426 /* YourTune.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		045324CC2D33ACD0007F7426 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -65,6 +82,9 @@
 			);
 			name = YourTune;
 			packageProductDependencies = (
+				045324CD2D33ACD0007F7426 /* FirebaseAuth */,
+				045324CF2D33ACD3007F7426 /* FirebaseCore */,
+				045324D12D33ACD9007F7426 /* FirebaseFirestore */,
 			);
 			productName = YourTune;
 			productReference = 0453245F2D31C9DA007F7426 /* YourTune.app */;
@@ -94,6 +114,9 @@
 			);
 			mainGroup = 045324562D31C9DA007F7426;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				045324CB2D33ACC2007F7426 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 045324602D31C9DA007F7426 /* Products */;
 			projectDirPath = "";
@@ -322,6 +345,35 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		045324CB2D33ACC2007F7426 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.6.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		045324CD2D33ACD0007F7426 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 045324CB2D33ACC2007F7426 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		045324CF2D33ACD3007F7426 /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 045324CB2D33ACC2007F7426 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+		045324D12D33ACD9007F7426 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 045324CB2D33ACC2007F7426 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 045324572D31C9DA007F7426 /* Project object */;
 }
