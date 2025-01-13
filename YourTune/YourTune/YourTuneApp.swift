@@ -6,12 +6,22 @@
 //
 
 import SwiftUI
+import Firebase
 
 @main
 struct YourTuneApp: App {
+    
+    init() {
+        FirebaseApp.configure()
+    }
+    
     var body: some Scene {
-        WindowGroup {
-            ContentView()
+            WindowGroup {
+                ZStack {
+                LinearGradient.shinyDarkGradient.ignoresSafeArea()
+                LoginView()
+            }
         }
     }
 }
+
