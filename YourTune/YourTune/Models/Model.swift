@@ -12,3 +12,41 @@ struct User: Identifiable {
     let email: String
     let username: String
 }
+
+struct TVShow: Identifiable, Codable {
+    var id: String
+    var image: String
+    var title: String
+    var seasons: [Season]
+}
+
+struct Season: Identifiable, Codable {
+    var id: String
+    var seasonNumber: Int
+    var seasonImage: String
+    var episodes: [Episode]
+}
+
+struct Episode: Identifiable, Codable {
+    var id: String
+    var title: String
+    var Songs: [Song]
+}
+
+struct Playlist: Identifiable, Hashable {
+    let id = UUID()
+    var name: String?
+    var playListSongs: [Song]?
+}
+
+struct Song: Identifiable, Codable, Hashable {
+    var id: String
+    var artist: String
+    var title: String
+    var preview: URL?
+//    var album: Album?
+    var description: String
+    var localAudioname: String
+    var likeCount: Int = 0
+    var viewCount: Int = 0
+}
