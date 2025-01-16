@@ -190,7 +190,7 @@ struct LoginView: View {
                 .padding(.top, 50)
                 .navigationViewStyle(StackNavigationViewStyle())
                 .fullScreenCover(isPresented: $isLoggedIn) {
-//                    MainTabView()
+                    MainTabView()
                 }
 
                 if showNotification {
