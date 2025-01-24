@@ -13,11 +13,12 @@ struct Wrapper: UIViewControllerRepresentable {
     var userViewModel: UserViewModel
 
     func makeUIViewController(context: Context) -> SeasonsViewController {
-        let seasonsVC = SeasonsViewController()
-        return seasonsVC
+        SeasonsViewController(tvShow: tvShow, userViewModel: userViewModel)
     }
 
     func updateUIViewController(_ uiViewController: SeasonsViewController, context: Context) {
-        
+        uiViewController.tvShow = tvShow
+        uiViewController.updateSeasons()
     }
 }
+

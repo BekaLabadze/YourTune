@@ -8,14 +8,16 @@
 import SwiftUI
 
 struct TVShowView: View {
-    @StateObject var viewModel = ViewModel()
+    @StateObject var viewModel = TVShowViewModel()
     @EnvironmentObject var userViewModel: UserViewModel
+    @EnvironmentObject var themeManager: ThemeManager
     @State var searchText = ""
     let gridLayout = [GridItem(.flexible(), spacing: 20), GridItem(.flexible(), spacing: 20)]
-    
+
     var body: some View {
         ZStack {
-            LinearGradient.shinyDarkGradient.edgesIgnoringSafeArea(.all)
+            themeManager.backgroundGradient
+                .ignoresSafeArea()
             NavigationView {
                 VStack(spacing: 16) {
                     Text("TV Shows")
@@ -29,12 +31,12 @@ struct TVShowView: View {
                         )
                         .padding(.top, 16)
 
-                    TextField("", text: $viewModel.searchQuery, prompt: Text("Search TV Shows").foregroundColor(.white))
+                    TextField("", text: $viewModel.searchQuery, prompt: Text("Search TV Shows").foregroundColor(themeManager.secondaryTextColor))
                         .padding(12)
-                        .foregroundColor(.white)
+                        .foregroundColor(themeManager.textColor)
                         .background(
                             RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.white.opacity(0.1))
+                                .fill(themeManager.isDarkMode ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
@@ -51,16 +53,16 @@ struct TVShowView: View {
 
                     ScrollView {
                         LazyVGrid(columns: gridLayout, spacing: 20) {
-                            ForEach(viewModel.filteredTVShows, id: \.id) { tvShows in
-                                NavigationLink(destination: Wrapper(tvShow: tvShows, userViewModel: userViewModel)) {
-                                    Image(tvShows.image)
+                            ForEach(viewModel.filteredTVShows, id: \.id) { tvShow in
+                                NavigationLink(destination: songsViewController(tvShow: tvShow)) {
+                                    Image(tvShow.image)
                                         .resizable()
                                         .scaledToFill()
                                         .frame(width: 170, height: 200)
                                         .clipped()
                                         .opacity(0.85)
                                         .cornerRadius(10)
-                                        .shadow(color: Color.white.opacity(0.4), radius: 10, x: 0, y: 0)
+                                        .shadow(color: themeManager.isDarkMode ? Color.white.opacity(0.2) : Color.black.opacity(0.2), radius: 10, x: 0, y: 0)
                                 }
                             }
                         }
@@ -70,20 +72,28 @@ struct TVShowView: View {
                 }
                 .navigationTitle("")
                 .navigationBarHidden(true)
-                .toolbarBackground(LinearGradient.shinyDarkGradient, for: .tabBar)
-                .toolbarBackground(LinearGradient.shinyDarkGradient, for: .navigationBar)
+                .toolbarBackground(
+                    themeManager.backgroundGradient,
+                    for: .tabBar
+                )
+                .toolbarBackground(
+                    themeManager.backgroundGradient,
+                    for: .navigationBar
+                )
                 .onChange(of: viewModel.searchQuery) { _ in
                     viewModel.filterTVShows()
                 }
                 .onAppear {
                     viewModel.fetchTVShows()
                 }
-                .background(LinearGradient.shinyDarkGradient.edgesIgnoringSafeArea(.all))
+                .background(themeManager.backgroundGradient)
             }
         }
     }
+
+    func songsViewController(tvShow: TVShow) -> some View {
+        Wrapper(tvShow: tvShow, userViewModel: userViewModel)
+            .background(themeManager.backgroundGradient)
+    }
 }
 
-#Preview {
-    TVShowView()
-}
