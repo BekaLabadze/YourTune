@@ -15,28 +15,44 @@ class Player: UIViewController {
     var audioPlayer: AVPlayer?
     var isPlaying: Bool = false
     var timeObserverToken: Any?
-
+    var dismissAction: (() -> Void)?
+    var isFromSwiftUI: Bool = false
+    
     let playButton: UIButton = {
         let button = UIButton()
         button.setSymbolImage(systemName: "play.fill", pointSize: 40, weight: .bold)
+        button.tintColor = .purple
         return button
     }()
 
     let nextButton: UIButton = {
         let button = UIButton()
         button.setSymbolImage(systemName: "forward.fill", pointSize: 20, weight: .bold)
+        button.tintColor = .purple
         return button
     }()
 
     let backButton: UIButton = {
         let button = UIButton()
         button.setSymbolImage(systemName: "backward.fill", pointSize: 20, weight: .bold)
+        button.tintColor = .purple
         return button
     }()
+    
+    let dismissButton: UIButton = {
+            let button = UIButton(type: .system)
+            button.setTitle("Dismiss", for: .normal)
+            button.setTitleColor(.white, for: .normal)
+            button.backgroundColor = UIColor.black.withAlphaComponent(0.6)
+            button.layer.cornerRadius = 10
+            button.translatesAutoresizingMaskIntoConstraints = false
+            return button
+        }()
 
     let addToPlayList: UIButton = {
         let button = UIButton()
         button.setSymbolImage(systemName: "plus.circle.fill", pointSize: 20, weight: .bold)
+        button.tintColor = .purple
         return button
     }()
 
@@ -66,6 +82,7 @@ class Player: UIViewController {
         let slider = UISlider()
         slider.minimumValue = 0
         slider.isContinuous = true
+        slider.tintColor = .purple
         return slider
     }()
 
@@ -88,6 +105,9 @@ class Player: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setUpUI()
+        if isFromSwiftUI {
+            setupDismissButton()
+        }
         loadInitialSong()
     }
 
@@ -113,16 +133,18 @@ class Player: UIViewController {
         blurEffectView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(blurEffectView)
         
-        let gradientLayer = CAGradientLayer()
-        gradientLayer.colors = [UIColor.black.withAlphaComponent(0.8).cgColor, UIColor.clear.cgColor]
-        gradientLayer.locations = [0.0, 1.0]
-        gradientLayer.startPoint = CGPoint(x: 0, y: 0)
-        gradientLayer.endPoint = CGPoint(x: 1, y: 1)
-        let gradientView = UIView()
-        gradientView.translatesAutoresizingMaskIntoConstraints = false
-        gradientView.layer.addSublayer(gradientLayer)
-        view.addSubview(gradientView)
-        
+            let gradientLayer = CAGradientLayer()
+            gradientLayer.colors = [UIColor.black.withAlphaComponent(0.8).cgColor, UIColor.clear.cgColor]
+            gradientLayer.locations = [0.0, 1.0]
+            gradientLayer.startPoint = CGPoint(x: 0, y: 0)
+            gradientLayer.endPoint = CGPoint(x: 1, y: 1)
+            gradientLayer.frame = UIScreen.main.bounds
+
+            let gradientView = UIView()
+            gradientView.layer.addSublayer(gradientLayer)
+            gradientView.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(gradientView)
+
         NSLayoutConstraint.activate([
             backgroundImageView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             backgroundImageView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
@@ -137,16 +159,28 @@ class Player: UIViewController {
             gradientView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             gradientView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             gradientView.topAnchor.constraint(equalTo: view.topAnchor),
-            gradientView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            gradientView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
         
         view.sendSubviewToBack(gradientView)
         view.sendSubviewToBack(blurEffectView)
         view.sendSubviewToBack(backgroundImageView)
-        
         setupForegroundUI()
     }
 
+    private func setupDismissButton() {
+        view.addSubview(dismissButton)
+        
+        NSLayoutConstraint.activate([
+            dismissButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 10),
+            dismissButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 10),
+            dismissButton.heightAnchor.constraint(equalToConstant: 40),
+            dismissButton.widthAnchor.constraint(equalToConstant: 100),
+        ])
+        
+        dismissButton.addTarget(self, action: #selector(dismissPlayer), for: .touchUpInside)
+    }
+    
     private func setupForegroundUI() {
         view.addSubview(playButton)
         view.addSubview(songImage)
@@ -224,8 +258,8 @@ class Player: UIViewController {
         nextButton.addTarget(self, action: #selector(nextButtonTapped), for: .touchUpInside)
         backButton.addTarget(self, action: #selector(backButtonTapped), for: .touchUpInside)
         progressBar.addTarget(self, action: #selector(didChangeProgress(_:)), for: .valueChanged)
+        addToPlayList.addTarget(self, action: #selector(addToPlayListTapped), for: .touchUpInside)
     }
-
 
     private func loadInitialSong() {
         guard let previewURL = selectedSong.preview else { return }
@@ -236,7 +270,6 @@ class Player: UIViewController {
         isPlaying = true
         playButton.setSymbolImage(systemName: "pause.fill", pointSize: 40, weight: .bold)
     }
-
 
     private func syncPlayButtonState() {
         if audioPlayer?.rate == 0 {
@@ -253,7 +286,6 @@ class Player: UIViewController {
         isPlaying = false
         syncPlayButtonState()
     }
-
 
     private func updateUIForCurrentSong() {
         songTitle.text = "\(selectedSong.title) by \(selectedSong.artist)"
@@ -302,7 +334,6 @@ class Player: UIViewController {
         }
     }
 
-
     private func stopObservingProgress() {
         if let token = timeObserverToken {
             audioPlayer?.removeTimeObserver(token)
@@ -316,6 +347,10 @@ class Player: UIViewController {
         return String(format: "%02d:%02d", minutes, seconds)
     }
 
+    @objc private func dismissPlayer() {
+            dismissAction?()
+        }
+    
     @objc private func playButtonTapped() {
         if isPlaying {
             audioPlayer?.pause()
@@ -357,5 +392,16 @@ class Player: UIViewController {
         guard let player = audioPlayer else { return }
         let newTime = CMTime(seconds: Double(sender.value), preferredTimescale: 1)
         player.seek(to: newTime, toleranceBefore: .zero, toleranceAfter: .zero)
+    }
+
+    @objc private func addToPlayListTapped() {
+        let playlistVC = PlayListViewController()
+        playlistVC.selectedSong = selectedSong
+        let navController = UINavigationController(rootViewController: playlistVC)
+        navController.modalPresentationStyle = .pageSheet
+        navController.sheetPresentationController?.detents = [.medium(), .large()]
+        navController.view.backgroundColor = .clear
+        GradientHelper.applyShinyDarkGradient(to: navController.view)
+        present(navController, animated: true)
     }
 }
