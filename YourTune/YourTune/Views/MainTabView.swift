@@ -16,25 +16,30 @@ struct MainTabView: View {
             themeManager.backgroundGradient
                 .ignoresSafeArea()
             TabView {
-                TVShowView()
+                TVShowView(viewModel: viewModel)
                     .tabItem {
                         Label("TV Shows", systemImage: "tv")
                     }
+                    .environmentObject(PlayListManager.shared)
                 
-                ExploreView()
+                Explore(viewModel: ExploreViewModel(tvShows: viewModel.tvShows))
                     .tabItem {
                         Label("Explore", systemImage: "globe")
                     }
+                    .environmentObject(PlayListManager.shared)
                 
-                FavoritesView()
+                FavoritesView(viewModel: FavoritesViewModel(tvShows: viewModel.tvShows))
                     .tabItem {
                         Label("Favorites", systemImage: "heart.fill")
                     }
+                    .environmentObject(PlayListManager.shared)
                 
                 ProfileView()
                     .tabItem {
                         Label("Profile", systemImage: "person.fill")
                     }
+                    .environmentObject(viewModel)
+                    .environmentObject(PlayListManager.shared)
             }
             .toolbarBackground(
                 themeManager.backgroundGradient,
