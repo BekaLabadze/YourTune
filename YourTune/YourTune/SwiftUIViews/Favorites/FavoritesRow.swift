@@ -52,10 +52,10 @@ struct FavoritesRow: View {
                 Spacer()
 
                 Button(action: {
-                    userViewModel.toggleFavorite(for: song, in: episodeID, of: tvShowID)
+                    SessionProvider.shared.toggleFavorite(for: song, in: episodeID, of: tvShowID)
                 }) {
-                    Image(systemName: userViewModel.isFavorite(song) ? "heart.fill" : "heart")
-                        .foregroundColor(userViewModel.isFavorite(song) ? .red : themeManager.textColor)
+                    Image(systemName: SessionProvider.shared.isFavorite(song) ? "heart.fill" : "heart")
+                        .foregroundColor(SessionProvider.shared.isFavorite(song) ? .red : themeManager.textColor)
                 }
                 .buttonStyle(BorderlessButtonStyle())
             }

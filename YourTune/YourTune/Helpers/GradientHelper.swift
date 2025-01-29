@@ -8,16 +8,16 @@
 import UIKit
 
 class GradientHelper {
-    static let navigationBarColors: [UIColor] = [
-        UIColor(displayP3Red: 0.05, green: 0.05, blue: 0.2, alpha: 1.0),
-        UIColor(displayP3Red: 0.1, green: 0.0, blue: 0.3, alpha: 1.0),
-        UIColor(displayP3Red: 0.2, green: 0.0, blue: 0.5, alpha: 1.0)
+    static let spotifyDarkModeGradient: [UIColor] = [
+        UIColor.black,
+        UIColor(red: 0.07, green: 0.07, blue: 0.07, alpha: 1.0),
+        UIColor(red: 0.10, green: 0.08, blue: 0.08, alpha: 1.0)
     ]
-    
+
     static func applyShinyDarkGradient(to view: UIView) {
         if ThemeManager.shared.isDarkMode {
             let gradientLayer = CAGradientLayer()
-            gradientLayer.colors = navigationBarColors.map { $0.cgColor }
+            gradientLayer.colors = spotifyDarkModeGradient.map { $0.cgColor }
             gradientLayer.startPoint = CGPoint(x: 0, y: 0)
             gradientLayer.endPoint = CGPoint(x: 1, y: 1)
             gradientLayer.frame = view.bounds
@@ -30,7 +30,7 @@ class GradientHelper {
     
     static func applyShinyDarkGradientToNavigationBar(_ navigationBar: UINavigationBar) {
         let gradientLayer = CAGradientLayer()
-        gradientLayer.colors = navigationBarColors.map { $0.cgColor }
+        gradientLayer.colors = spotifyDarkModeGradient.map { $0.cgColor }
         gradientLayer.startPoint = CGPoint(x: 0, y: 0)
         gradientLayer.endPoint = CGPoint(x: 1, y: 1)
         gradientLayer.frame = CGRect(origin: .zero, size: CGSize(width: UIScreen.main.bounds.width, height: 88))
@@ -50,14 +50,10 @@ class GradientHelper {
         navigationBar.compactAppearance = appearance
         navigationBar.isTranslucent = true
     }
-    
+
     static func applyGradientBackground(to tableView: UITableView) {
         let gradientLayer = CAGradientLayer()
-        gradientLayer.colors = [
-            UIColor(red: 0.05, green: 0.05, blue: 0.2, alpha: 1.0).cgColor,
-            UIColor(red: 0.1, green: 0.0, blue: 0.3, alpha: 1.0).cgColor,
-            UIColor(red: 0.2, green: 0.0, blue: 0.5, alpha: 1.0).cgColor
-        ]
+        gradientLayer.colors = spotifyDarkModeGradient.map { $0.cgColor }
         gradientLayer.startPoint = CGPoint(x: 0.0, y: 0.0)
         gradientLayer.endPoint = CGPoint(x: 1.0, y: 1.0)
         gradientLayer.frame = tableView.bounds
@@ -69,6 +65,9 @@ class GradientHelper {
         tableView.backgroundColor = .clear
     }
 }
+
+
+import UIKit
 
 class NavigationBarHelper {
     static func applyCustomTitleAppearance(
@@ -87,6 +86,8 @@ class NavigationBarHelper {
         
         if let backgroundColor = backgroundColor {
             appearance.backgroundColor = backgroundColor
+        } else {
+            appearance.backgroundColor = ThemeManager.shared.isDarkMode ? UIColor(red: 0.10, green: 0.08, blue: 0.08, alpha: 1.0) : .white
         }
 
         navigationBar.standardAppearance = appearance

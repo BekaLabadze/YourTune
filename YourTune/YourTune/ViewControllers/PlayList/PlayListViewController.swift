@@ -2,16 +2,23 @@
 //  PlayListViewController.swift
 //  YourTune
 //
-//  Created by Beka on 26.01.25.
+//  Created by Beka on 29.01.25.
 //
 
 import UIKit
 
 class PlayListViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
-    var playlists: [Playlist] = []
-    var selectedSong: Song?
-
+    var viewModel: PlayListViewModel
     let tableView = UITableView()
+    
+    init(viewModel: PlayListViewModel) {
+        self.viewModel = viewModel
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -54,53 +61,26 @@ class PlayListViewController: UIViewController, UITableViewDataSource, UITableVi
     }
 
     private func loadPlaylists() {
-        
-        playlists = PlayListManager.shared.playListArray
+        viewModel.playlists = PlayListManager.shared.playListArray
         tableView.reloadData()
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return playlists.count
+        return viewModel.playlists.count
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "PlaylistCell", for: indexPath)
         cell.backgroundColor = .clear
-        let playlist = playlists[indexPath.row]
+        let playlist = viewModel.playlists[indexPath.row]
         cell.textLabel?.text = playlist.name
+        cell.textLabel?.textColor = ThemeManager.shared.uiKitTextColor
         return cell
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let selectedPlaylist = playlists[indexPath.row]
-        addSongToPlaylist(selectedPlaylist)
+        let selectedPlaylist = viewModel.playlists[indexPath.row]
+        viewModel.addSongToPlaylist(selectedPlaylist)
         dismiss(animated: true, completion: nil)
     }
-
-    private func addSongToPlaylist(_ playlist: Playlist) {
-        guard let song = selectedSong else {
-            print("Error: No selected song to add.")
-            return
-        }
-
-        if let index = PlayListManager.shared.playListArray.firstIndex(where: { $0.id == playlist.id }) {
-            var targetPlaylist = PlayListManager.shared.playListArray[index]
-
-            if var songs = targetPlaylist.playListSongs {
-                if !songs.contains(where: { $0.id == song.id }) {
-                    songs.append(song)
-                    targetPlaylist.playListSongs = songs
-                    PlayListManager.shared.playListArray[index] = targetPlaylist
-                } else {
-                    print("Song already exists in the playlist")
-                }
-            } else {
-                targetPlaylist.playListSongs = [song]
-                PlayListManager.shared.playListArray[index] = targetPlaylist
-            }
-        } else {
-            print("Error: Playlist not found in PlayListManager.")
-        }
-    }
-
 }

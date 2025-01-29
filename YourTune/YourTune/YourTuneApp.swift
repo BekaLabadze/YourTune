@@ -7,14 +7,16 @@
 
 import SwiftUI
 import Firebase
+import GoogleSignIn
 
 @main
 struct swiftuianduikitApp: App {
     @StateObject var userViewModel = UserViewModel()
     @StateObject var themeManager = ThemeManager.shared
-    
+        
     init() {
         FirebaseApp.configure()
+        themeManager.setupTabBarAppearance()
     }
     
     var body: some Scene {
@@ -24,21 +26,26 @@ struct swiftuianduikitApp: App {
                 LoginView()
                     .environmentObject(userViewModel)
                     .environmentObject(themeManager)
+                    .onOpenURL { url in
+                        GIDSignIn.sharedInstance.handle(url)
+                }
+            }
+            .onAppear {
+                setupNavigationBarAppearance()
             }
         }
     }
-    
+
     func setupNavigationBarAppearance() {
         let appearance = UINavigationBarAppearance()
         appearance.configureWithTransparentBackground()
         appearance.backgroundEffect = nil
-        appearance.backgroundColor = themeManager.isDarkMode ? UIColor.black : UIColor.white
         appearance.titleTextAttributes = [
-            .foregroundColor: themeManager.isDarkMode ? UIColor.white : UIColor.black,
+            .foregroundColor: themeManager.uiKitTextColor,
             .font: UIFont.boldSystemFont(ofSize: 20)
         ]
         appearance.largeTitleTextAttributes = [
-            .foregroundColor: themeManager.isDarkMode ? UIColor.white : UIColor.black,
+            .foregroundColor: themeManager.uiKitTextColor,
             .font: UIFont.boldSystemFont(ofSize: 34)
         ]
         UINavigationBar.appearance().standardAppearance = appearance
