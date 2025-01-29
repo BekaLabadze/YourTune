@@ -8,19 +8,18 @@
 import SwiftUI
 
 struct Explore: View {
-    @State private var selectedSong: Song?
     @State private var showPlayer: Bool = false
     @ObservedObject var viewModel: ExploreViewModel
     @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var themeManager: ThemeManager
 
     var body: some View {
-        NavigationView {
             ZStack {
                 themeManager.backgroundGradient
                     .ignoresSafeArea()
 
                 VStack {
+                    titleView
                     searchBar
                     filterBar
 
@@ -79,7 +78,7 @@ struct Explore: View {
                                     }
                                 }
                                 .onTapGesture {
-                                    selectedSong = song
+                                    viewModel.selectedSongs = song
                                     showPlayer = true
                                 }
                             }
@@ -90,25 +89,28 @@ struct Explore: View {
                 }
                 .padding()
             }
-            .task {
-                
-                viewModel.fetchAndMapSongs()
-            }
-            .toolbar (){
-                ToolbarItem(placement: .topBarLeading) {
-                    Text("Explore")
-                        .foregroundStyle(themeManager.textColor)
-                }
-            }
             .toolbarBackground(themeManager.backgroundGradient, for: .navigationBar)
             .sheet(isPresented: $showPlayer) {
-                if let selectedSong = selectedSong {
+                if let selectedSong = viewModel.selectedSongs {
                     PlayerWrapper(selectedSong: selectedSong, songArray: viewModel.filteredSongs)
                 }
+            }
+            .task {
+                viewModel.fetchTvShows()
             }
             .onChange(of: viewModel.searchText) { _ in
                 viewModel.filterAndSortSongs()
             }
+            .background(themeManager.backgroundGradient)
+    }
+    
+    private var titleView: some View {
+        HStack {
+            Text("Explore")
+                .foregroundStyle(themeManager.textColor)
+                .font(.largeTitle)
+            
+            Spacer()
         }
     }
 
@@ -151,4 +153,3 @@ enum FilterOption {
     case mostViewed
     case mostLiked
 }
-

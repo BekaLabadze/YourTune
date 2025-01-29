@@ -12,17 +12,22 @@ struct PlayerWrapper: UIViewControllerRepresentable {
     var songArray: [Song]
     @Environment(\.dismiss) private var dismiss
     
-    func makeUIViewController(context: Context) -> Player {
-        let playerVC = Player()
-        playerVC.selectedSong = selectedSong
-        playerVC.songArray = songArray
-        playerVC.isFromSwiftUI = true
+    func makeUIViewController(context: Context) -> PlayerViewController {
+        let playerViewModel = PlayerViewModel(
+            songArray: songArray,
+            selectedSong: selectedSong
+        )
+        let playerVC = PlayerViewController(
+            viewModel: playerViewModel,
+            isFromSwiftUI: true
+        )
         playerVC.dismissAction = { dismiss() }
         return playerVC
     }
 
-    func updateUIViewController(_ uiViewController: Player, context: Context) {
-        uiViewController.selectedSong = selectedSong
-        uiViewController.songArray = songArray
+    func updateUIViewController(_ uiViewController: PlayerViewController, context: Context) {
+        uiViewController.viewModel.selectedSong = selectedSong
+        uiViewController.viewModel.songArray = songArray
     }
 }
+

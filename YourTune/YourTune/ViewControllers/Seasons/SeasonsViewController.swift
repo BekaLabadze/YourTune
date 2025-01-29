@@ -1,24 +1,22 @@
 //
-//  SeasonViewController.swift
+//  SeasonsViewController.swift
 //  YourTune
 //
-//  Created by Beka on 16.01.25.
+//  Created by Beka on 29.01.25.
 //
 
 import UIKit
 
 class SeasonsViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
-    var tvShow: TVShow!
-    var userViewModel: UserViewModel!
+    var viewModel: SeasonsViewModel
     private let seasonView = UITableView()
     private var themeObserver: NSObjectProtocol?
-
-    init(tvShow: TVShow, userViewModel: UserViewModel) {
-        self.tvShow = tvShow
-        self.userViewModel = userViewModel
+    
+    init(viewModel: SeasonsViewModel) {
+        self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
     }
-
+    
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
@@ -35,9 +33,17 @@ class SeasonsViewController: UIViewController, UITableViewDataSource, UITableVie
     }
 
     private func configureUI() {
+        setupTableView()
+        setupTableViewConstraints()
+    }
+    
+    private func setupTableView() {
         seasonView.delegate = self
         seasonView.dataSource = self
         seasonView.register(SeasonCell.self, forCellReuseIdentifier: "SeasonCell")
+    }
+    
+    private func setupTableViewConstraints() {
         seasonView.translatesAutoresizingMaskIntoConstraints = false
         seasonView.backgroundColor = .clear
         view.addSubview(seasonView)
@@ -69,8 +75,7 @@ class SeasonsViewController: UIViewController, UITableViewDataSource, UITableVie
             view.backgroundColor = .white
             seasonView.backgroundColor = .clear
         }
-        
-        seasonView.reloadData()
+        updateSeasons()
     }
 
     func updateSeasons() {
@@ -78,23 +83,26 @@ class SeasonsViewController: UIViewController, UITableViewDataSource, UITableVie
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        tvShow.seasons.count
+        viewModel.seasonsCount
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = seasonView.dequeueReusableCell(withIdentifier: "SeasonCell", for: indexPath) as? SeasonCell else {
             return UITableViewCell()
         }
-        let specificSeason = tvShow.seasons[indexPath.row]
-        cell.configure(tvShow, specificSeason)
+        let specificSeason = viewModel.getSeason(at: indexPath.row)
+        cell.configure(viewModel.tvShow, specificSeason)
         return cell
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let episodesVC = EpisodesViewController()
-        episodesVC.season = tvShow.seasons[indexPath.row]
-        episodesVC.tvShowObject = tvShow
-        episodesVC.userViewModel = userViewModel
+        let episodesVC = EpisodesViewController(
+            viewModel: EpisodesViewModel(
+                season: viewModel.getSeason(at: indexPath.row),
+                tvShowObject: viewModel.tvShow
+            )
+        )
+        episodesVC.userViewModel = viewModel.userViewModel
         navigationController?.pushViewController(episodesVC, animated: true)
     }
 

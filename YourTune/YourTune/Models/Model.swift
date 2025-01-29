@@ -68,3 +68,4 @@ struct Artist: Codable, Equatable, Hashable {
 struct Album: Codable, Equatable, Hashable {
     var cover: URL
 }
+

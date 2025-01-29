@@ -2,22 +2,25 @@
 //  TVShowViewModel.swift
 //  YourTune
 //
-//  Created by Beka on 24.01.25.
+//  Created by Beka on 29.01.25.
 //
 
-import SwiftUI
-import AVFoundation
-import UIKit
+import Foundation
+import FirebaseAuth
+import FirebaseCore
+import FirebaseFirestore
 
-class TVShowViewModel: ObservableObject {
+final class TvShowsViewModel: ObservableObject {
+    @Published var user: User?
     @Published var tvShows: [TVShow] = []
     @Published var filteredTVShows: [TVShow] = []
     @Published var searchQuery: String = ""
+    @Published var errorMessage: String?
     private var serviceModel = ServiceManager()
-    var isPlaying: Bool = false
     var songs: [Song] = []
-    var selectedSong: Song?
     
+    private let db = Firestore.firestore()
+
     init() {
         fetchTVShows()
         getSongs()

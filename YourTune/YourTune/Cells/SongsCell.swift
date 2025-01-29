@@ -141,8 +141,8 @@ class SongsCell: UITableViewCell {
     }
 
     func updateFavoriteButtonState() {
-        guard let userViewModel = userViewModel, let song = song else { return }
-        let isFavorited = userViewModel.isFavorite(song)
+        guard let song = song else { return }
+        let isFavorited = SessionProvider.shared.isFavorite(song)
         DispatchQueue.main.async {
             self.favoriteButton.setImage(
                 UIImage(systemName: isFavorited ? "heart.fill" : "heart"),
@@ -167,18 +167,15 @@ class SongsCell: UITableViewCell {
     }
 
     @objc func toggleFavorite() {
-        guard let userViewModel = userViewModel,
-              let song = song,
+        guard let song = song,
               let tvShowID = tvShowID,
               let episodeID = episodeID else { return }
 
-        let isCurrentlyFavorited = userViewModel.isFavorite(song)
+        let isCurrentlyFavorited = SessionProvider.shared.isFavorite(song)
         favoriteButton.setImage(
             UIImage(systemName: isCurrentlyFavorited ? "heart" : "heart.fill"),
             for: .normal
         )
-
-        userViewModel.toggleFavorite(for: song, in: episodeID, of: tvShowID)
+        SessionProvider.shared.toggleFavorite(for: song, in: episodeID, of: tvShowID)
     }
-
 }

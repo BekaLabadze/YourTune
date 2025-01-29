@@ -2,24 +2,31 @@
 //  SongsViewController.swift
 //  YourTune
 //
-//  Created by Beka on 24.01.25.
+//  Created by Beka on 29.01.25.
 //
 
 import UIKit
 import AVFoundation
 
 class SongsViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
+    private var viewModel: SongsViewModel
     private let songTable = UITableView()
     private var themeObserver: NSObjectProtocol?
-    var songs: [Song]!
-    var tvShowObject: TVShow!
-    var userViewModel: UserViewModel!
-
+    
+    init(viewModel: SongsViewModel) {
+        self.viewModel = viewModel
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         configureUI()
         setupThemeObserver()
-        fetchAndMapSongs()
+        fetchSongs()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -29,9 +36,17 @@ class SongsViewController: UIViewController, UITableViewDataSource, UITableViewD
 
     
     private func configureUI() {
+        setupTableView()
+        setupTableViewConstraints()
+    }
+    
+    private func setupTableView() {
         songTable.delegate = self
         songTable.dataSource = self
         songTable.register(SongsCell.self, forCellReuseIdentifier: "SongsCell")
+    }
+    
+    private func setupTableViewConstraints() {
         songTable.backgroundColor = .clear
         songTable.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(songTable)
@@ -67,49 +82,38 @@ class SongsViewController: UIViewController, UITableViewDataSource, UITableViewD
         }
     }
 
-    private func fetchAndMapSongs() {
-        songs.forEach { song in
-            DeezerAPI().fetchSongDetails(songName: song.title) { [weak self] result in
-                guard let self = self else { return }
-                if case .success(let fetchedSong) = result {
-                    self.updateSongArray(with: fetchedSong)
-                }
-            }
-        }
-    }
-
-    private func updateSongArray(with deezer: Deezer) {
-        if let index = songs.firstIndex(where: { $0.title == deezer.title || $0.artist == deezer.artist.name }) {
-            songs[index].preview = deezer.preview
-            songs[index].album = deezer.album
-            DispatchQueue.main.async {
-                self.songTable.reloadData()
-            }
-        }
-    }
-
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        songs.count
+        viewModel.songsCount
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: "SongsCell", for: indexPath) as? SongsCell else {
             return UITableViewCell()
         }
-        let song = songs[indexPath.row]
-        cell.configure(with: song, userViewModel: userViewModel, tvShowID: tvShowObject.id, episodeID: findEpisodeID(for: song) ?? "")
+        let song = viewModel.getSong(at: indexPath.row)
+        cell.configure(
+            with: song,
+            userViewModel: viewModel.userViewModel,
+            tvShowID: viewModel.tvShowObject.id,
+            episodeID: viewModel.findEpisodeID(for: song) ?? ""
+        )
         return cell
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        let selectedSong = songs[indexPath.row]
-        guard let tvShowID = tvShowObject?.id, let episodeID = findEpisodeID(for: selectedSong) else { return }
-        incrementViewCount(for: selectedSong, in: episodeID, of: tvShowID)
-        let playerVC = Player()
-        playerVC.songArray = songs
-        playerVC.selectedSong = selectedSong
-        playerVC.tvShowObject = tvShowObject
+        let selectedSong = viewModel.getSong(at: indexPath.row)
+        let tvShowID = viewModel.tvShowObject.id
+        guard let episodeID = viewModel.findEpisodeID(for: selectedSong) else { return }
+        viewModel.incrementViewCount(for: selectedSong, in: episodeID, of: tvShowID)
+        let playerViewModel = PlayerViewModel(
+            songArray: viewModel.songs,
+            selectedSong: selectedSong
+        )
+        let playerVC = PlayerViewController(
+            viewModel: playerViewModel,
+            isFromSwiftUI: false
+        )
         navigationController?.pushViewController(playerVC, animated: true)
     }
 
@@ -117,17 +121,17 @@ class SongsViewController: UIViewController, UITableViewDataSource, UITableViewD
         100
     }
 
-    private func incrementViewCount(for song: Song, in episodeID: String, of tvShowID: String) {
-        userViewModel.incrementViewCount(for: song, in: episodeID, of: tvShowID)
-    }
-
-    private func findEpisodeID(for song: Song) -> String? {
-        tvShowObject.seasons.flatMap { $0.episodes }.first { $0.Songs.contains { $0.id == song.id } }?.id
-    }
+    
 
     deinit {
         if let observer = themeObserver {
             NotificationCenter.default.removeObserver(observer)
+        }
+    }
+    
+    private func fetchSongs() {
+        viewModel.fetchAndMapSongs() { [weak self] in
+            self?.songTable.reloadData()
         }
     }
 }
