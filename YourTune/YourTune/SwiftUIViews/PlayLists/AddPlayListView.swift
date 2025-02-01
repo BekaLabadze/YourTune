@@ -19,16 +19,17 @@ struct AddPlayListView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 20) {
-                TextField("Enter Playlist Name", text: $playListName)
+                TextField("", text: $playListName, prompt: Text("Enter Playlist Name")
+                    .foregroundColor(themeManager.isDarkMode ? .white : .gray))
                     .padding()
-                    .foregroundColor(themeManager.textColor)
+                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
                     .background(
                         RoundedRectangle(cornerRadius: 12)
-                            .fill(themeManager.isDarkMode ? Color.black.opacity(0.1) : Color.white.opacity(0.1))
+                            .fill(themeManager.isDarkMode ? Color(red: 0.15, green: 0.15, blue: 0.15) : Color.white.opacity(0.9))
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
-                            .stroke(themeManager.buttonGradient, lineWidth: 1)
+                            .stroke(themeManager.isDarkMode ? Color.green : Color.gray.opacity(0.5), lineWidth: 1)
                     )
                     .padding(.horizontal)
 
@@ -45,10 +46,17 @@ struct AddPlayListView: View {
                 } label: {
                     Text("Save")
                         .font(.headline)
-                        .foregroundColor(.black)
+                        .foregroundColor(themeManager.textColor)
                         .padding()
                         .frame(maxWidth: .infinity)
-                        .background(themeManager.buttonGradient.cornerRadius(10))
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(themeManager.isDarkMode ? Color(red: 0.15, green: 0.15, blue: 0.15) : Color.white.opacity(0.9))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(themeManager.isDarkMode ? Color.green : Color.gray.opacity(0.5), lineWidth: 1)
+                        )
                 }
                 .disabled(viewModel.isSaving)
                 .padding(.horizontal)
@@ -61,7 +69,14 @@ struct AddPlayListView: View {
                         .foregroundColor(themeManager.textColor)
                         .padding()
                         .frame(maxWidth: .infinity)
-                        .background(themeManager.buttonGradient.cornerRadius(10))
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(themeManager.isDarkMode ? Color(red: 0.15, green: 0.15, blue: 0.15) : Color.white.opacity(0.9))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(themeManager.isDarkMode ? Color.green : Color.gray.opacity(0.5), lineWidth: 1)
+                        )
                 }
                 .padding(.horizontal)
             }

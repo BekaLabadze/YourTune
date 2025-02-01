@@ -111,6 +111,7 @@ class SeasonCell: UITableViewCell {
             applyTheme()
         } else {
             seasonLabel.textColor = .black
+            seasonIcon.tintColor = .black
         }
     }
 }

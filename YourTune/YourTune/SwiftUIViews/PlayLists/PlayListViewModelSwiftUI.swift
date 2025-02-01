@@ -131,3 +131,62 @@ class PlaylistViewModelSwiftUI: ObservableObject {
         }
     }
 }
+
+extension PlaylistViewModelSwiftUI {
+    func deletePlaylist(playlistID: String, completion: @escaping (Bool) -> Void) {
+        guard let userID = Auth.auth().currentUser?.uid else {
+            completion(false)
+            return
+        }
+
+        let playlistRef = Firestore.firestore().collection("users").document(userID).collection("playlists").document(playlistID)
+
+        playlistRef.delete { error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    print("Error deleting playlist: \(error.localizedDescription)")
+                    completion(false)
+                } else {
+                    self.playlists.removeAll { $0.id == playlistID }
+                    completion(true)
+                }
+            }
+        }
+    }
+
+        func deleteSongFromPlaylist(playlistID: String, songID: String, completion: @escaping (Bool) -> Void) {
+            guard let userID = Auth.auth().currentUser?.uid else {
+                completion(false)
+                return
+            }
+
+            let playlistRef = Firestore.firestore().collection("users").document(userID).collection("playlists").document(playlistID)
+
+            playlistRef.getDocument { document, error in
+                if let error = error {
+                    print("Error fetching playlist: \(error.localizedDescription)")
+                    completion(false)
+                    return
+                }
+
+                guard let document = document, document.exists, var songList = document.data()?["songs"] as? [[String: Any]] else {
+                    completion(false)
+                    return
+                }
+
+                songList.removeAll { $0["id"] as? String == songID }
+
+                playlistRef.updateData(["songs": songList]) { error in
+                    DispatchQueue.main.async {
+                        if let error = error {
+                            print("Error deleting song: \(error.localizedDescription)")
+                            completion(false)
+                        } else {
+                            self.songs.removeAll { $0.id == songID }
+                            completion(true)
+                        }
+                    }
+                }
+            }
+        }
+    }

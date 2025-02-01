@@ -24,7 +24,7 @@ class SongsViewController: UIViewController, UITableViewDataSource, UITableViewD
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        NotificationCenter.default.addObserver(self, selector: #selector(reloadSongsTable), name: NSNotification.Name("SongsUpdated"), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(reloadSongsTable), name: .favoritesUpdated, object: nil)
         configureUI()
         setupThemeObserver()
         fetchSongs()
@@ -126,7 +126,7 @@ class SongsViewController: UIViewController, UITableViewDataSource, UITableViewD
             )
             navigationController?.pushViewController(playerVC, animated: true)
         } else {
-            navigationController?.pushViewController(ErrorViewController(), animated: true)
+            navigationController?.pushViewController(ErrorViewController(song: selectedSong), animated: true)
         }
     }
 
@@ -149,5 +149,4 @@ class SongsViewController: UIViewController, UITableViewDataSource, UITableViewD
     func updateFavorites() {
         fetchSongs()
     }
-    
 }

@@ -263,11 +263,18 @@ class SongsCell: UITableViewCell {
               let episodeID = episodeID else { return }
 
         let isCurrentlyFavorited = SessionProvider.shared.isFavorite(song)
+
         favoriteButton.setImage(
-            UIImage(systemName: isCurrentlyFavorited ? "plus.circle" : "plus.circle"),
+            UIImage(systemName: isCurrentlyFavorited ? "heart" : "heart.fill"),
             for: .normal
         )
+        
         SessionProvider.shared.toggleFavorite(for: song, in: episodeID, of: tvShowID)
-        delegate?.updateFavorites()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            self.updateFavoriteButtonState()
+            self.delegate?.updateFavorites()
+        }
     }
+
 }

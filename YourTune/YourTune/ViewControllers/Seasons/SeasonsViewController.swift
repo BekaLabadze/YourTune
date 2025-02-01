@@ -25,6 +25,7 @@ class SeasonsViewController: UIViewController, UITableViewDataSource, UITableVie
         super.viewDidLoad()
         configureUI()
         setupThemeObserver()
+        
     }
 
     override func viewWillAppear(_ animated: Bool) {

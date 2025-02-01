@@ -54,6 +54,8 @@ extension LinearGradient {
     }
 }
 
+
+
 extension Color {
     static let shinySemiDark = Color(red: 0.3, green: 0.4, blue: 0.5)
 }

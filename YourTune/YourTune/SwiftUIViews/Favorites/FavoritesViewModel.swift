@@ -45,6 +45,27 @@ class FavoritesViewModel: ObservableObject {
         SessionProvider.shared.fetchFavorites { [weak self] favorites in
             DispatchQueue.main.async {
                 self?.favorites = favorites
+                self?.fetchAndMapSongs()
+            }
+        }
+    }
+
+    func fetchAndMapSongs() {
+        self.favorites.forEach { song in
+            DeezerAPI().fetchSongDetails(songName: song.title, artistName: song.artist) { [weak self] result in
+                guard let self = self else { return }
+                if case .success(let fetchedSong) = result {
+                    self.updateFavoritesArray(with: fetchedSong)
+                }
+            }
+        }
+    }
+
+    func updateFavoritesArray(with deezer: Deezer) {
+        if let index = favorites.firstIndex(where: { $0.title == deezer.title || $0.artist == deezer.artist.name }) {
+            DispatchQueue.main.async {
+                self.favorites[index].preview = deezer.preview
+                self.favorites[index].album = deezer.album
             }
         }
     }

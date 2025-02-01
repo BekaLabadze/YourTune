@@ -53,7 +53,7 @@ class PlayerViewController: UIViewController {
     
     let dismissButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("Dismiss", for: .normal)
+        button.setTitle("Close", for: .normal)
         button.setTitleColor(.white, for: .normal)
         button.backgroundColor = UIColor.black.withAlphaComponent(0.6)
         button.layer.cornerRadius = 10
@@ -90,6 +90,9 @@ class PlayerViewController: UIViewController {
         let label = UILabel()
         label.textColor = .white
         label.font = .systemFont(ofSize: 20, weight: .bold)
+        label.numberOfLines = 0
+        label.lineBreakMode = .byWordWrapping
+        label.textAlignment = .center
         return label
     }()
 
@@ -97,6 +100,9 @@ class PlayerViewController: UIViewController {
         let label = UILabel()
         label.textColor = .white
         label.font = .systemFont(ofSize: 15, weight: .bold)
+        label.numberOfLines = 0
+        label.lineBreakMode = .byWordWrapping
+        label.textAlignment = .center
         return label
     }()
 
@@ -229,19 +235,19 @@ class PlayerViewController: UIViewController {
         
         NSLayoutConstraint.activate([
                 songImage.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-                songImage.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -150),
+                songImage.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -130),
                 songImage.heightAnchor.constraint(equalToConstant: 400),
                 songImage.widthAnchor.constraint(equalToConstant: 400),
 
-                songTitle.topAnchor.constraint(equalTo: songImage.bottomAnchor),
+                songTitle.topAnchor.constraint(equalTo: songImage.bottomAnchor, constant: 10),
+                songTitle.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+                songTitle.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
                 songTitle.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-                songTitle.heightAnchor.constraint(equalToConstant: 50),
-                songTitle.widthAnchor.constraint(equalToConstant: 200),
 
-                descriptionTitle.topAnchor.constraint(equalTo: songTitle.bottomAnchor, constant: -20),
+                descriptionTitle.topAnchor.constraint(equalTo: songTitle.bottomAnchor, constant: 10),
+                descriptionTitle.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+                descriptionTitle.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
                 descriptionTitle.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-                descriptionTitle.heightAnchor.constraint(equalToConstant: 50),
-                descriptionTitle.widthAnchor.constraint(equalToConstant: 200),
 
                 playButton.topAnchor.constraint(equalTo: songTitle.bottomAnchor, constant: 50),
                 playButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),

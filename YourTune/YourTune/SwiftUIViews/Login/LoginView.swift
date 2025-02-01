@@ -13,8 +13,8 @@ import SwiftUI
 
 struct LoginView: View {
     @EnvironmentObject var themeManager: ThemeManager
-    @State private var email: String = "Test123@gmail.com"
-    @State private var password: String = "test123"
+    @State private var email: String = ""
+    @State private var password: String = ""
         
     @StateObject var viewModel: LoginViewModel = LoginViewModel()
 

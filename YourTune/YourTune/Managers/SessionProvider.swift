@@ -96,13 +96,16 @@ final class SessionProvider {
         guard let userId = SessionProvider.shared.user?.id else { return }
         
         let isCurrentlyFavorited = isFavorite(song)
-        
+
         if isCurrentlyFavorited {
             removeFavorite(song: song, in: episodeID, of: tvShowID)
         } else {
             addFavorite(song: song, in: episodeID, of: tvShowID)
         }
+        
+        NotificationCenter.default.post(name: .favoritesUpdated, object: nil)
     }
+
     
     func addFavorite(song: Song, in episodeID: String, of tvShowID: String) {
         guard let userId = SessionProvider.shared.user?.id else { return }
@@ -185,12 +188,14 @@ final class SessionProvider {
         
         db.collection("users").document(userId).collection("favorites").getDocuments { [weak self] snapshot, error in
             if let error = error {
-                print("Error")
+                print("Error fetching favorites: \(error.localizedDescription)")
                 return
             }
             
             guard let documents = snapshot?.documents else { return }
             var fetchedFavorites: [Song] = []
+            let group = DispatchGroup()
+
             for document in documents {
                 let data = document.data()
                 if let id = data["id"] as? String,
@@ -198,20 +203,31 @@ final class SessionProvider {
                    let artist = data["artist"] as? String,
                    let description = data["description"] as? String,
                    let localAudioname = data["localAudioname"] as? String {
-                    let song = Song(
+                    
+                    var song = Song(
                         id: id,
                         artist: artist,
                         title: title,
                         description: description,
                         localAudioname: localAudioname
                     )
-                    fetchedFavorites.append(song)
+                    
+                    group.enter()
+                    DeezerAPI().fetchSongDetails(songName: title, artistName: artist) { result in
+                        if case .success(let deezerSong) = result {
+                            song.album = deezerSong.album
+                        }
+                        fetchedFavorites.append(song)
+                        group.leave()
+                    }
                 }
             }
-            DispatchQueue.main.async {
-                self?.favorites = fetchedFavorites
-                completion?(self?.favorites ?? [])
-                self?.fetchAndMapSongs()
+            
+            group.notify(queue: .main) {
+                DispatchQueue.main.async {
+                    self?.favorites = fetchedFavorites
+                    completion?(fetchedFavorites)
+                }
             }
         }
     }
