@@ -51,7 +51,7 @@ class ExploreViewModel: ObservableObject {
     
     func fetchAndMapSongs() {
         self.songs.forEach { song in
-            DeezerAPI().fetchSongDetails(songName: song.title) { [weak self] result in
+            DeezerAPI().fetchSongDetails(songName: song.title, artistName: song.artist) { [weak self] result in
                 guard let self = self else { return }
                 if case .success(let fetchedSong) = result {
                     self.updateSongArray(with: fetchedSong)
@@ -66,9 +66,9 @@ class ExploreViewModel: ObservableObject {
             DispatchQueue.main.async {
                 self.songs[index].preview = deezer.preview
                 self.songs[index].album = deezer.album
+                self.updateFilteredSongs()
             }
         }
-        updateFilteredSongs()
     }
     
     func updateFilteredSongs() {
@@ -85,4 +85,13 @@ class ExploreViewModel: ObservableObject {
             }
         }
     }
+    
+    func getCoverURL(song: Song) -> URL? {
+         if let urlString = song.album?.cover.absoluteString,
+            let url = URL(string: urlString) {
+             return url
+         } else {
+             return nil
+         }
+     }
 }

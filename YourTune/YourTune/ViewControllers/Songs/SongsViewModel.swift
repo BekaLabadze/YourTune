@@ -10,12 +10,10 @@ import Foundation
 final class SongsViewModel {
     var songs: [Song]
     var tvShowObject: TVShow
-    var userViewModel: UserViewModel
     
-    init(songs: [Song], tvShowObject: TVShow, userViewModel: UserViewModel) {
+    init(songs: [Song], tvShowObject: TVShow) {
         self.songs = songs
         self.tvShowObject = tvShowObject
-        self.userViewModel = userViewModel
     }
     
     var songsCount: Int {
@@ -27,30 +25,57 @@ final class SongsViewModel {
     }
     
     func fetchAndMapSongs(completion: @escaping () -> Void) {
-        songs.forEach { song in
-            DeezerAPI().fetchSongDetails(songName: song.title) { [weak self] result in
-                guard let self = self else { return }
-                if case .success(let fetchedSong) = result {
-                    self.updateSongArray(with: fetchedSong)
-                    DispatchQueue.main.async {
-                        completion()
+        let queue = DispatchQueue(label: "deezer.api.queue", qos: .userInitiated)
+        let group = DispatchGroup()
+
+        for (index, song) in songs.enumerated() {
+            group.enter()
+            
+            queue.asyncAfter(deadline: .now() + Double(index) * 0.3) {
+                print("🎵 Fetching song: \(song.title) by \(song.artist)")
+
+                DeezerAPI().fetchSongDetails(songName: song.title, artistName: song.artist) { [weak self] result in
+                    guard let self = self else {
+                        group.leave()
+                        return
                     }
+
+                    if case .success(let fetchedSong) = result {
+                        self.updateSongArray(with: fetchedSong)
+                    } else {
+                        print("Failed to fetch preview for \(song.title)")
+                    }
+
+                    group.leave()
                 }
             }
         }
+
+        group.notify(queue: .main) {
+            completion()
+        }
     }
-    
+
     private func updateSongArray(with deezer: Deezer) {
-        if let index = songs.firstIndex(where: { $0.title == deezer.title || $0.artist == deezer.artist.name }) {
+        if let index = songs.firstIndex(where: {
+            $0.title.lowercased() == deezer.title.lowercased() &&
+            $0.artist.lowercased() == deezer.artist.name.lowercased()
+        }) {
             songs[index].preview = deezer.preview
             songs[index].album = deezer.album
+
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: NSNotification.Name("SongsUpdated"), object: nil)
+            }
+        } else {
+            print("Error")
         }
     }
     
     func incrementViewCount(for song: Song, in episodeID: String, of tvShowID: String) {
-        userViewModel.incrementViewCount(for: song, in: episodeID, of: tvShowID)
+        SessionProvider.shared.incrementViewCount(for: song, in: episodeID, of: tvShowID)
     }
-
+    
     func findEpisodeID(for song: Song) -> String? {
         tvShowObject.seasons.flatMap { $0.episodes }.first { $0.Songs.contains { $0.id == song.id } }?.id
     }

@@ -50,6 +50,8 @@ final class LoginViewModel: ObservableObject {
                     return
                 }
                 self.createGoogleUserIfNeeded(user: user)
+                self.fetchUser()
+                SessionProvider.shared.fetchFavorites()
                 completion(true, nil)
             }
         }
@@ -71,8 +73,8 @@ final class LoginViewModel: ObservableObject {
                 }
                 
                 let userData: [String: Any] = [
-                    "email": profile.email ?? "",
-                    "username": profile.name ?? "Unknown",
+                    "email": profile.email,
+                    "username": profile.name,
                     "createdAt": Timestamp()
                 ]
                 
@@ -87,22 +89,6 @@ final class LoginViewModel: ObservableObject {
             }
         }
     }
-    
-//    func fetchUser() {
-//        guard let userId = Auth.auth().currentUser?.uid else { return }
-//        db.collection("users").document(userId).getDocument { [weak self] document, error in
-//            if let error = error {
-//                self?.errorMessage = error.localizedDescription
-//                return
-//            }
-//            if let data = document?.data(),
-//               let email = data["email"] as? String,
-//               let username = data["username"] as? String {
-//                self?.user = User(id: userId, email: email, username: username)
-//                self?.fetchFavorites()
-//            }
-//        }
-//    }
     
     func loginUser(email: String, password: String) {
         guard !email.isEmpty, !password.isEmpty else {

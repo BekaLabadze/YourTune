@@ -10,13 +10,11 @@ import UIKit
 
 struct Wrapper: UIViewControllerRepresentable {
     var tvShow: TVShow
-    var userViewModel: UserViewModel
 
     func makeUIViewController(context: Context) -> SeasonsViewController {
         SeasonsViewController(
             viewModel: .init(
-                tvShow: tvShow,
-                userViewModel: userViewModel
+                tvShow: tvShow
             )
         )
     }

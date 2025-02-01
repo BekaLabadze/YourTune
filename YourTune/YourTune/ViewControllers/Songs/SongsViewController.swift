@@ -8,7 +8,7 @@
 import UIKit
 import AVFoundation
 
-class SongsViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
+class SongsViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, SongCellDelegate {
     private var viewModel: SongsViewModel
     private let songTable = UITableView()
     private var themeObserver: NSObjectProtocol?
@@ -24,6 +24,7 @@ class SongsViewController: UIViewController, UITableViewDataSource, UITableViewD
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        NotificationCenter.default.addObserver(self, selector: #selector(reloadSongsTable), name: NSNotification.Name("SongsUpdated"), object: nil)
         configureUI()
         setupThemeObserver()
         fetchSongs()
@@ -68,6 +69,13 @@ class SongsViewController: UIViewController, UITableViewDataSource, UITableViewD
         }
     }
 
+    @objc private func reloadSongsTable() {
+        DispatchQueue.main.async {
+            print("🔄 Reloading TableView...")
+            self.songTable.reloadData()
+        }
+    }
+    
     private func applyTheme() {
         view.layer.sublayers?.removeAll(where: { $0 is CAGradientLayer })
         if ThemeManager.shared.isDarkMode {
@@ -76,7 +84,7 @@ class SongsViewController: UIViewController, UITableViewDataSource, UITableViewD
             view.layer.insertSublayer(gradientLayer, at: 0)
             view.backgroundColor = .clear
         } else {
-            view.backgroundColor = .white
+            view.backgroundColor = .adjustedWhite
             songTable.backgroundColor = .clear
             view.layer.sublayers?.removeAll(where: { $0 is CAGradientLayer })
         }
@@ -93,35 +101,38 @@ class SongsViewController: UIViewController, UITableViewDataSource, UITableViewD
         let song = viewModel.getSong(at: indexPath.row)
         cell.configure(
             with: song,
-            userViewModel: viewModel.userViewModel,
             tvShowID: viewModel.tvShowObject.id,
-            episodeID: viewModel.findEpisodeID(for: song) ?? ""
+            episodeID: viewModel.findEpisodeID(for: song) ?? "",
+            delegate: self
         )
+        
         return cell
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         let selectedSong = viewModel.getSong(at: indexPath.row)
-        let tvShowID = viewModel.tvShowObject.id
-        guard let episodeID = viewModel.findEpisodeID(for: selectedSong) else { return }
-        viewModel.incrementViewCount(for: selectedSong, in: episodeID, of: tvShowID)
-        let playerViewModel = PlayerViewModel(
-            songArray: viewModel.songs,
-            selectedSong: selectedSong
-        )
-        let playerVC = PlayerViewController(
-            viewModel: playerViewModel,
-            isFromSwiftUI: false
-        )
-        navigationController?.pushViewController(playerVC, animated: true)
+        if let url = selectedSong.preview {
+            let tvShowID = viewModel.tvShowObject.id
+            guard let episodeID = viewModel.findEpisodeID(for: selectedSong) else { return }
+            viewModel.incrementViewCount(for: selectedSong, in: episodeID, of: tvShowID)
+            let playerViewModel = PlayerViewModel(
+                songArray: viewModel.songs,
+                selectedSong: selectedSong
+            )
+            let playerVC = PlayerViewController(
+                viewModel: playerViewModel,
+                isFromSwiftUI: false
+            )
+            navigationController?.pushViewController(playerVC, animated: true)
+        } else {
+            navigationController?.pushViewController(ErrorViewController(), animated: true)
+        }
     }
 
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         100
     }
-
-    
 
     deinit {
         if let observer = themeObserver {
@@ -134,4 +145,9 @@ class SongsViewController: UIViewController, UITableViewDataSource, UITableViewD
             self?.songTable.reloadData()
         }
     }
+    
+    func updateFavorites() {
+        fetchSongs()
+    }
+    
 }

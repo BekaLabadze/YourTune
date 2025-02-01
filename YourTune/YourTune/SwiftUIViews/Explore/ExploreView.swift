@@ -10,7 +10,6 @@ import SwiftUI
 struct Explore: View {
     @State private var showPlayer: Bool = false
     @ObservedObject var viewModel: ExploreViewModel
-    @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var themeManager: ThemeManager
 
     var body: some View {
@@ -31,7 +30,7 @@ struct Explore: View {
                     } else {
                         List(viewModel.filteredSongs, id: \.id) { song in
                             HStack {
-                                if let url = userViewModel.getCoverURL(song: song) {
+                                if let url = viewModel.getCoverURL(song: song) {
                                     AsyncImage(url: url) { result in
                                         switch result {
                                         case .success(let image):
@@ -93,6 +92,7 @@ struct Explore: View {
             .sheet(isPresented: $showPlayer) {
                 if let selectedSong = viewModel.selectedSongs {
                     PlayerWrapper(selectedSong: selectedSong, songArray: viewModel.filteredSongs)
+                        .ignoresSafeArea()
                 }
             }
             .task {

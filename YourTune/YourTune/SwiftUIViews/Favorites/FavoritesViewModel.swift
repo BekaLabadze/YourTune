@@ -10,20 +10,14 @@ import FirebaseAuth
 import FirebaseCore
 import FirebaseFirestore
 
-
 class FavoritesViewModel: ObservableObject {
     @Published var tvShows: [TVShow] = []
-    
-    var favorites: [Song] {
-        SessionProvider.shared.favorites
-    }
-    
+    @Published var selectedSongs: Song?
     private var serviceModel = ServiceManager()
     
+    @Published var favorites: [Song] = SessionProvider.shared.favorites
     
-    private let db = Firestore.firestore()
-    
-    func findIDs(for song: Song) -> (episodeID: String, tvShowID: String)? {
+    func findIDs(for song: Song) -> (episodeID: String?, tvShowID: String?) {
         for tvShow in tvShows {
             for season in tvShow.seasons {
                 for episode in season.episodes {
@@ -33,7 +27,7 @@ class FavoritesViewModel: ObservableObject {
                 }
             }
         }
-        return nil
+        return (nil, nil)
     }
     
     func fetchTVShows() {
@@ -42,7 +36,16 @@ class FavoritesViewModel: ObservableObject {
         }
     }
     
-    func removeFavorite(song: Song, in episodeID: String, of tvShowID: String) {
-        SessionProvider.shared.removeFavorite(song: song, in:episodeID, of: tvShowID)
+    func toggleFavorite(song: Song) {
+        let ids = findIDs(for: song)
+        SessionProvider.shared.toggleFavorite(for: song, in: ids.episodeID ?? "", of: ids.tvShowID ?? "")
+    }
+    
+    func fetchFavorites() {
+        SessionProvider.shared.fetchFavorites { [weak self] favorites in
+            DispatchQueue.main.async {
+                self?.favorites = favorites
+            }
+        }
     }
 }

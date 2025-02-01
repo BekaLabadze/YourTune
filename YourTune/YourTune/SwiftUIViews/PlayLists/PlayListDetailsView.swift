@@ -9,28 +9,32 @@ import SwiftUI
 
 struct PlaylistDetailView: View {
     var playlist: Playlist
-    @State private var selectedSong: Song?
+    @ObservedObject var viewModel: PlaylistViewModelSwiftUI
     @EnvironmentObject var themeManager: ThemeManager
+    @StateObject private var selectedSongWrapper = SelectedSongWrapper()
     @State private var isPlayerPresented = false
 
     var body: some View {
         ZStack {
-            themeManager.backgroundGradient
-                .ignoresSafeArea()
+            themeManager.backgroundGradient.ignoresSafeArea()
 
             VStack {
-                Text(playlist.name ?? "Untitled Playlist")
+                Text(playlist.name)
                     .font(.largeTitle)
                     .foregroundColor(themeManager.textColor)
                     .padding()
 
-                if let songs = playlist.playListSongs, !songs.isEmpty {
-                    List(songs, id: \.self) { song in
+                if viewModel.songs.isEmpty {
+                    Text("No Songs in Playlist")
+                        .foregroundColor(themeManager.textColor)
+                        .padding()
+                } else {
+                    List(viewModel.songs, id: \.id) { song in
                         Button(action: {
-                            selectedSong = song
-                            print("Selected Song: \(selectedSong?.title ?? "No Title")")
-                            isPlayerPresented = true
-                            print("isPlayerPresented: \(isPlayerPresented)")
+                            selectedSongWrapper.selectedSong = song
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                    isPlayerPresented = true
+                                }
                         }) {
                             HStack {
                                 Text(song.title)
@@ -43,26 +47,26 @@ struct PlaylistDetailView: View {
                         .listRowBackground(themeManager.backgroundGradient)
                     }
                     .listStyle(PlainListStyle())
-                } else {
-                    Text("No Songs in Playlist")
-                        .foregroundColor(themeManager.textColor)
-                        .padding()
                 }
             }
             .padding()
         }
-        .fullScreenCover(isPresented: $isPlayerPresented) {
-            ZStack {
-                PlayerWrapper(selectedSong: selectedSong!, songArray: playlist.playListSongs ?? [])
-            }
-            .ignoresSafeArea()
+            .onAppear {
+                viewModel.fetchSongs(for: playlist.id)
+                viewModel.fetchAndMapSongs()
+                
         }
-        .onChange(of: selectedSong) { newValue in
-            if let selectedSong = newValue {
-                print("Presenting PlayerWrapper for song: \(selectedSong.title)")
-                isPlayerPresented = true
+        .sheet(isPresented: $isPlayerPresented) {
+            if let song = selectedSongWrapper.selectedSong {
+                PlayerWrapper(selectedSong: song, songArray: viewModel.songs)
+                    .ignoresSafeArea()
+                    .onAppear {
+                        print("Song: \(song.title)")
+                        print("Song: \(String(describing: song.preview))")
+                        print("Song: \(song.album?.cover)")
+                    }
             } else {
-                print("Error: selectedSong is nil when triggering the sheet")
+                Text("No song selected")
             }
         }
     }

@@ -11,11 +11,12 @@ struct FavoritesRow: View {
     let song: Song
     let episodeID: String
     let tvShowID: String
-    @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var themeManager: ThemeManager
     var onPlayTapped: () -> Void
     var onRowTapped: () -> Void
-
+    var onHeartTapped: () -> Void
+    @State var isFavorite: Bool
+    
     var body: some View {
         ZStack {
             HStack {
@@ -52,10 +53,11 @@ struct FavoritesRow: View {
                 Spacer()
 
                 Button(action: {
-                    SessionProvider.shared.toggleFavorite(for: song, in: episodeID, of: tvShowID)
+                    isFavorite.toggle()
+                    onHeartTapped()
                 }) {
-                    Image(systemName: SessionProvider.shared.isFavorite(song) ? "heart.fill" : "heart")
-                        .foregroundColor(SessionProvider.shared.isFavorite(song) ? .red : themeManager.textColor)
+                    Image(systemName: isFavorite ? "heart.fill" : "heart")
+                        .foregroundColor(isFavorite ? .red : themeManager.textColor)
                 }
                 .buttonStyle(BorderlessButtonStyle())
             }

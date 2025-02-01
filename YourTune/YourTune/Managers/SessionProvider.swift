@@ -5,6 +5,7 @@
 //  Created by Beka on 29.01.25.
 //
 
+import Foundation
 import FirebaseAuth
 import FirebaseCore
 import FirebaseFirestore
@@ -21,7 +22,6 @@ final class SessionProvider {
     func setUser(_ user: User?) {
         self.user = user
     }
-    
     
     func removeFavorite(song: Song, in episodeID: String, of tvShowID: String) {
         guard let userId = SessionProvider.shared.user?.id else { return }
@@ -180,7 +180,7 @@ final class SessionProvider {
         }
     }
     
-    func fetchFavorites() {
+    func fetchFavorites(completion: (([Song]) -> Void)? = nil)  {
         guard let userId = Auth.auth().currentUser?.uid else { return }
         
         db.collection("users").document(userId).collection("favorites").getDocuments { [weak self] snapshot, error in
@@ -210,6 +210,76 @@ final class SessionProvider {
             }
             DispatchQueue.main.async {
                 self?.favorites = fetchedFavorites
+                completion?(self?.favorites ?? [])
+                self?.fetchAndMapSongs()
+            }
+        }
+    }
+    
+    func incrementViewCount(for song: Song, in episodeID: String, of tvShowID: String) {
+        let tvShowRef = db.collection("tvShows").document(tvShowID)
+        
+        tvShowRef.getDocument { document, error in
+            if let error = error {
+                print("Error fetching TV show: \(error.localizedDescription)")
+                return
+            }
+            
+            guard let document = document, document.exists else {
+                print("TV show document not found.")
+                return
+            }
+            
+            var seasons = document.data()?["seasons"] as? [[String: Any]] ?? []
+            
+            for seasonIndex in 0..<seasons.count {
+                var episodes = seasons[seasonIndex]["episodes"] as? [[String: Any]] ?? []
+                
+                for episodeIndex in 0..<episodes.count {
+                    if episodes[episodeIndex]["id"] as? String == episodeID {
+                        var songs = episodes[episodeIndex]["Songs"] as? [[String: Any]] ?? []
+                        
+                        if let songIndex = songs.firstIndex(where: { $0["id"] as? String == song.id }) {
+                            var currentViewCount = songs[songIndex]["viewCount"] as? Int ?? 0
+                            currentViewCount += 1
+                            songs[songIndex]["viewCount"] = currentViewCount
+                            
+                            episodes[episodeIndex]["Songs"] = songs
+                            seasons[seasonIndex]["episodes"] = episodes
+                            
+                            tvShowRef.updateData(["seasons": seasons]) { error in
+                                if let error = error {
+                                    print("Error updating view count: \(error.localizedDescription)")
+                                } else {
+                                    print("Successfully incremented view count for \(song.title) to \(currentViewCount).")
+                                }
+                            }
+                            return
+                        }
+                    }
+                }
+            }
+            
+            print("Song not found in any episodes.")
+        }
+    }
+    
+    func fetchAndMapSongs(completion: (([Song]) -> Void)? = nil) {
+        self.favorites.forEach { song in
+            DeezerAPI().fetchSongDetails(songName: song.title, artistName: song.artist) { [weak self] result in
+                guard let self = self else { return }
+                if case .success(let fetchedSong) = result {
+                    self.updateFavouritesArray(with: fetchedSong)
+                }
+            }
+        }
+    }
+    
+    func updateFavouritesArray(with deezer: Deezer) {
+        if let index = favorites.firstIndex(where: { $0.title == deezer.title || $0.artist == deezer.artist.name }) {
+            DispatchQueue.main.async {
+                self.favorites[index].preview = deezer.preview
+                self.favorites[index].album = deezer.album
             }
         }
     }

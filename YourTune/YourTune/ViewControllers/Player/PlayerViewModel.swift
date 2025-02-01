@@ -122,12 +122,11 @@ final class PlayerViewModel {
     }
     
     private func reprocessAudioFile(at fileURL: URL, startTime: Double, endTime: Double, completion: @escaping (URL?) -> Void) {
-        let outputURL = FileManager.default.temporaryDirectory.appendingPathComponent("mamuka-\(UUID()).m4a")
+        let outputURL = FileManager.default.temporaryDirectory.appendingPathComponent("Trimmed audio-\(UUID()).m4a")
         
         if FileManager.default.fileExists(atPath: outputURL.path) {
             try? FileManager.default.removeItem(at: outputURL)
         }
-        
         
         do {
             let audioFile = try AVAudioFile(forReading: fileURL)

@@ -30,4 +30,3 @@ struct PlayerWrapper: UIViewControllerRepresentable {
         uiViewController.viewModel.songArray = songArray
     }
 }
-

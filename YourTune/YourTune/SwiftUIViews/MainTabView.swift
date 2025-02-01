@@ -9,42 +9,28 @@ import SwiftUI
 
 struct MainTabView: View {
     @EnvironmentObject var themeManager: ThemeManager
+    @State var toolColor: LinearGradient = ThemeManager.shared.tabBarGradient
 
     var body: some View {
         ZStack {
-            themeManager.backgroundGradient
-                .ignoresSafeArea()
-
             TabView {
                 TVShowsView()
                     .tabItem { Label("TV Shows", systemImage: "tv") }
-
+                    .toolbarBackground(toolColor, for: .tabBar)
                 Explore(viewModel: ExploreViewModel())
                     .tabItem { Label("Explore", systemImage: "globe") }
-
+                    .toolbarBackground(toolColor, for: .tabBar)
                 FavoritesView(viewModel: FavoritesViewModel())
                     .tabItem { Label("Favorites", systemImage: "heart.fill") }
-
+                    .toolbarBackground(toolColor, for: .tabBar)
                 ProfileView()
                     .tabItem { Label("Profile", systemImage: "person.fill") }
+                    .toolbarBackground(toolColor, for: .tabBar)
             }
             .accentColor(Color.green)
             .onAppear {
                 themeManager.setupTabBarAppearance()
             }
-            .onChange(of: themeManager.isDarkMode) { _ in
-                themeManager.setupTabBarAppearance()
-            }
-
-            VStack {
-                Spacer()
-                Rectangle()
-                    .fill(themeManager.isDarkMode ? Color.black.opacity(0.10) : Color.white.opacity(0.05))
-                    .frame(height: 12)
-                    .edgesIgnoringSafeArea(.bottom)
-                    .blur(radius: 10)
-            }
-            .allowsHitTesting(false)
         }
     }
 }

@@ -33,12 +33,15 @@ struct User: Identifiable {
     let username: String
 }
 
-struct Playlist: Identifiable, Hashable {
-    let id = UUID()
-    var name: String?
-    var playListSongs: [Song]?
-}
+struct Playlist: Identifiable, Codable {
+    let id: String
+    let name: String
 
+    init(id: String = UUID().uuidString, name: String) {
+        self.id = id
+        self.name = name
+    }
+}
 struct Song: Identifiable, Codable, Hashable {
     var id: String
     var artist: String
@@ -68,4 +71,3 @@ struct Artist: Codable, Equatable, Hashable {
 struct Album: Codable, Equatable, Hashable {
     var cover: URL
 }
-

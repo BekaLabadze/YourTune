@@ -9,11 +9,9 @@ import Foundation
 
 final class SeasonsViewModel {
     var tvShow: TVShow
-    var userViewModel: UserViewModel
     
-    init(tvShow: TVShow, userViewModel: UserViewModel) {
+    init(tvShow: TVShow) {
         self.tvShow = tvShow
-        self.userViewModel = userViewModel
     }
     
     var seasonsCount: Int {
