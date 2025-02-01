@@ -8,13 +8,15 @@
 import SwiftUI
 
 struct ProfileView: View {
-    @StateObject var viewModel = ProfileViewModel()
-    @StateObject var playListManager = PlayListManager.shared
+    @StateObject var viewModel = PlaylistViewModelSwiftUI()
+    @StateObject var profileViewModel = ProfileViewModel()
     @EnvironmentObject var themeManager: ThemeManager
     @State private var shouldNavigateToLogin = false
-    @State var isPresented: Bool = false
-    @State var selectedPlaylist: Playlist?
-    @State private var isDarkModeToggle: Bool
+    @State private var isPresented: Bool = false
+    @State private var selectedPlaylist: Playlist?
+    @State private var isDarkModeToggle = ThemeManager.shared.isDarkMode
+    @State private var showImagePicker = false
+    @State private var selectedImage: UIImage?
 
     init() {
         _isDarkModeToggle = State(initialValue: ThemeManager.shared.isDarkMode)
@@ -26,120 +28,36 @@ struct ProfileView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                VStack {
-                    ZStack {
-                        Image("profile_background")
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(height: 220)
-                            .clipped()
-
-                        VStack(spacing: 10) {
-                            Image("profile_picture")
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: 110, height: 110)
-                                .clipShape(Circle())
-                                .overlay(Circle().stroke(Color.white, lineWidth: 4))
-                                .shadow(radius: 10)
-                            
-                            Text(SessionProvider.shared.user?.username ?? "Loading...")
-                                .font(.title3)
-                                .foregroundColor(.white)
-                        }
-                    }
-                }
-                .padding(.bottom, 5)
-
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text("Your Playlists")
-                            .font(.title2)
-                            .foregroundColor(themeManager.textColor)
-                        Spacer()
-                        Button(action: {
-                            isPresented = true
-                        }) {
-                            Image(systemName: "plus.circle.fill")
-                                .resizable()
-                                .frame(width: 28, height: 28)
-                                .foregroundColor(themeManager.isDarkMode ? .white : .black)
-                        }
-                    }
-                    .padding(.horizontal)
-
-                    ScrollView {
-                        LazyVStack(spacing: 10) {
-                            ForEach(playListManager.playListArray, id: \.self) { playList in
-                                Button(action: {
-                                    selectedPlaylist = playList
-                                }) {
-                                    HStack {
-                                        Image("default_cover")
-                                            .resizable()
-                                            .aspectRatio(contentMode: .fill)
-                                            .frame(width: 60, height: 60)
-                                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                                            .shadow(radius: 5)
-
-                                        Text(playList.name ?? "Untitled Playlist")
-                                            .foregroundColor(themeManager.textColor)
-                                            .font(.body)
-                                            .bold()
-                                            .lineLimit(1)
-                                            .frame(maxWidth: .infinity, alignment: .leading)
-                                    }
-                                    .padding()
-                                    .background(themeManager.isDarkMode ? Color.black.opacity(0.2) : Color.white.opacity(0.2))
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                            }
-                        }
-                        .padding(.horizontal)
-                    }
-                    .frame(maxHeight: 300)
-                }
-                .padding(.top, 5)
+                
+                Spacer().frame(height: 20)
+                
+                ProfileHeaderView(profileImageURL: profileViewModel.profileImageURL, showImagePicker: $showImagePicker)
+                
+                Spacer().frame(height: 20)
+                
+                Text(SessionProvider.shared.user?.username ?? "Loading...")
+                    .font(.title3)
+                    .foregroundStyle(themeManager.isDarkMode ? Color.white : Color.black) 
+                
+                Spacer().frame(height: 60)
+                
+                PlaylistsSectionView(
+                    playlists: viewModel.playlists,
+                    themeManager: themeManager,
+                    onPlaylistSelect: { selectedPlaylist = $0 },
+                    onAddPlaylistTap: { isPresented = true }
+                )
 
                 Spacer()
 
                 VStack(spacing: 20) {
-                    VStack {
-                        HStack {
-                            Text(isDarkModeToggle ? "Switch to Light Mode" : "Switch to Dark Mode")
-                                .foregroundColor(themeManager.textColor)
-                                .font(.headline)
-                            Spacer()
-                            Toggle("", isOn: $isDarkModeToggle)
-                                .toggleStyle(SwitchToggleStyle(tint: themeManager.isDarkMode ? .green : .gray))
-                                .onChange(of: isDarkModeToggle) { newValue in
-                                    themeManager.isDarkMode = newValue
-                                    themeManager.objectWillChange.send()
-                                }
-                                .frame(width: 55)
-                        }
-                        .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(themeManager.isDarkMode ? Color.black.opacity(0.2) : Color.white.opacity(0.2))
-                        )
-                        .padding(.horizontal)
-                    }
+                    ThemeToggleView(isDarkModeToggle: $isDarkModeToggle)
+                        .environmentObject(themeManager)
 
-                    Button(action: {
-                        viewModel.signOut()
+                    LogoutButtonView {
+                        profileViewModel.signOut()
                         shouldNavigateToLogin = true
-                    }) {
-                        Text("Logout")
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(themeManager.buttonGradient)
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                            .shadow(radius: 5)
                     }
-                    .padding(.horizontal)
                 }
                 .padding(.top, 10)
                 .background(
@@ -158,11 +76,87 @@ struct ProfileView: View {
             LoginView()
         }
         .sheet(isPresented: $isPresented) {
-            AddPlayListView(playListArray: $playListManager.playListArray, isPresented: $isPresented)
+            AddPlayListView(isPresented: $isPresented, viewModel: viewModel)
                 .presentationDetents([.medium])
         }
-        .fullScreenCover(item: $selectedPlaylist) { playlist in
-            PlaylistDetailView(playlist: playlist)
+        .sheet(item: $selectedPlaylist) { playlist in
+            PlaylistDetailView(playlist: playlist, viewModel: viewModel)
         }
+        .sheet(isPresented: $showImagePicker) {
+            ImagePicker(image: $selectedImage)
+        }
+        .onChange(of: selectedImage) { newImage in
+            if let newImage = newImage {
+                profileViewModel.uploadProfileImage(image: newImage) { success in
+                    if success {
+                        print("Profile image updated successfully")
+                    }
+                }
+            }
+        }
+        .onAppear {
+            viewModel.startListeningForPlaylists()
+        }
+        .onDisappear {
+            viewModel.stopListeningForPlaylists()
+        }
+    }
+}
+
+
+
+struct PlaylistsSectionView: View {
+    let playlists: [Playlist]
+    let themeManager: ThemeManager
+    let onPlaylistSelect: (Playlist) -> Void
+    let onAddPlaylistTap: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Your Playlists")
+                    .font(.title2)
+                    .foregroundColor(themeManager.textColor)
+                Spacer()
+                Button(action: onAddPlaylistTap) {
+                    Image(systemName: "plus.circle.fill")
+                        .resizable()
+                        .frame(width: 28, height: 28)
+                        .foregroundColor(themeManager.isDarkMode ? .white : .black)
+                }
+            }
+            .padding(.horizontal)
+
+            ScrollView {
+                LazyVStack(spacing: 10) {
+                    ForEach(playlists, id: \.id) { playlist in
+                        Button(action: { onPlaylistSelect(playlist) }) {
+                            HStack {
+                                Image("default_cover")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(width: 60, height: 60)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .shadow(radius: 5)
+
+                                Text(playlist.name)
+                                    .foregroundColor(themeManager.textColor)
+                                    .font(.body)
+                                    .bold()
+                                    .lineLimit(1)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .padding()
+                            .background(themeManager.isDarkMode ? Color.black.opacity(0.2) : Color.white.opacity(0.2))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                }
+                .padding(.horizontal)
+            }
+            .frame(maxHeight: 300)
+        }
+        .padding(.top, 5)
     }
 }

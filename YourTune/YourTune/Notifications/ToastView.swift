@@ -20,7 +20,6 @@ struct ToastView: View {
             .shadow(radius: 5)
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 16)
-            .padding(.top, 50)
-        
+            .padding(.top, 90)
     }
 }

@@ -11,9 +11,8 @@ import GoogleSignIn
 
 @main
 struct swiftuianduikitApp: App {
-    @StateObject var userViewModel = UserViewModel()
-    @StateObject var themeManager = ThemeManager.shared
-        
+    @State var themeManager = ThemeManager.shared
+    
     init() {
         FirebaseApp.configure()
         themeManager.setupTabBarAppearance()
@@ -24,7 +23,6 @@ struct swiftuianduikitApp: App {
             ZStack {
                 themeManager.backgroundGradient.ignoresSafeArea()
                 LoginView()
-                    .environmentObject(userViewModel)
                     .environmentObject(themeManager)
                     .onOpenURL { url in
                         GIDSignIn.sharedInstance.handle(url)

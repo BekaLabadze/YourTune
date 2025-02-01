@@ -6,11 +6,12 @@
 //
 
 import UIKit
+import AVFoundation
 
 class PlayerViewController: UIViewController {
-    
     var viewModel: PlayerViewModel
-    
+    let playlistViewModel = PlayListViewModel()
+
     var dismissAction: (() -> Void)?
     var isFromSwiftUI: Bool = false
     
@@ -32,21 +33,21 @@ class PlayerViewController: UIViewController {
     let playButton: UIButton = {
         let button = UIButton()
         button.setSymbolImage(systemName: "play.fill", pointSize: 40, weight: .bold)
-        button.tintColor = .purple
+        button.tintColor = .buttonBackground
         return button
     }()
 
     let nextButton: UIButton = {
         let button = UIButton()
         button.setSymbolImage(systemName: "forward.fill", pointSize: 20, weight: .bold)
-        button.tintColor = .purple
+        button.tintColor = .buttonBackground
         return button
     }()
 
     let backButton: UIButton = {
         let button = UIButton()
         button.setSymbolImage(systemName: "backward.fill", pointSize: 20, weight: .bold)
-        button.tintColor = .purple
+        button.tintColor = .buttonBackground
         return button
     }()
     
@@ -63,17 +64,17 @@ class PlayerViewController: UIViewController {
     let addToPlayList: UIButton = {
         let button = UIButton()
         button.setSymbolImage(systemName: "plus.circle.fill", pointSize: 20, weight: .bold)
-        button.tintColor = .purple
+        button.tintColor = .buttonBackground
         return button
     }()
     
     let trimButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("Trim", for: .normal)
-        button.setTitleColor(.white, for: .normal)
-        button.backgroundColor = .purple
+        button.setTitle("✂️ Trim", for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 20, weight: .medium)
         button.layer.cornerRadius = 10
         button.translatesAutoresizingMaskIntoConstraints = false
+        button.tintColor = .buttonBackground
         return button
     }()
     
@@ -103,7 +104,7 @@ class PlayerViewController: UIViewController {
         let slider = UISlider()
         slider.minimumValue = 0
         slider.isContinuous = true
-        slider.tintColor = .purple
+        slider.tintColor = .white
         return slider
     }()
 
@@ -306,6 +307,12 @@ class PlayerViewController: UIViewController {
         }
     }
     
+    func updateSong(_ newSong: Song, songArray: [Song]) {
+        viewModel.selectedSong = newSong
+        viewModel.songArray = songArray
+        updateUIForCurrentSong()
+    }
+    
     func handleDownloadedFile(result: Result<URL, Error>) {
         DispatchQueue.main.async {
             switch result {
@@ -340,7 +347,6 @@ class PlayerViewController: UIViewController {
         }
     }
     
-
     private func updateUIForCurrentSong() {
         songTitle.text = "\(viewModel.selectedSong.title) by \(viewModel.selectedSong.artist)"
         descriptionTitle.text = "Scene: \(viewModel.selectedSong.description)"
@@ -377,10 +383,12 @@ class PlayerViewController: UIViewController {
 
     @objc private func nextButtonTapped() {
         viewModel.nextButtonTapped()
+        updateUIForCurrentSong()
     }
 
     @objc private func backButtonTapped() {
         viewModel.backButtonTapped()
+        updateUIForCurrentSong()
     }
 
     private func prepareForNextSong() {
@@ -393,14 +401,33 @@ class PlayerViewController: UIViewController {
     }
 
     @objc private func addToPlayListTapped() {
-        let playlistVC = PlayListViewController(
-            viewModel: .init(selectedSong: viewModel.selectedSong)
-        )
+        let playlistVC = PlayListViewController(viewModel: playlistViewModel)
+        playlistVC.onPlaylistSelected = { selectedPlaylist in
+            self.addCurrentSongToPlaylist(selectedPlaylist)
+        }
         
-        let navController = makeNavigationController(rootViewController: playlistVC)
-        
+        let navController = UINavigationController(rootViewController: playlistVC)
         present(navController, animated: true)
     }
+
+    private func addCurrentSongToPlaylist(_ playlist: Playlist) {
+        guard let currentSong = viewModel.selectedSong else {
+            print("Error: No song selected")
+            return
+        }
+
+        playlistViewModel.addSongToPlaylist(playlistId: playlist.id, song: currentSong) { success in
+            DispatchQueue.main.async {
+                if success {
+                    print("Song added successfully to \(playlist.name)")
+                } else {
+                    print("Error")
+                }
+            }
+        }
+    }
+
+
     
     private func makeNavigationController(rootViewController: UIViewController) -> UINavigationController {
         let navController = UINavigationController(rootViewController: rootViewController)
@@ -422,7 +449,7 @@ class PlayerViewController: UIViewController {
 
 extension PlayerViewController {
     private func showDownloadSuccessAlert(fileURL: URL) {
-        let alert = UIAlertController(title: "Download Complete", message: "The audio file was downloaded and reprocessed successfully to \(fileURL.path). You can now open it on your Mac.", preferredStyle: .alert)
+        let alert = UIAlertController(title: "Download Complete", message: "The audio file was downloaded and reprocessed successfully to \(fileURL.path)", preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default))
         present(alert, animated: true)
     }

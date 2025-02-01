@@ -7,10 +7,12 @@
 
 import Firebase
 import FirebaseFirestore
+import FirebaseStorage
 import SwiftUI
 
 class ServiceManager: ObservableObject {
     private var db = Firestore.firestore()
+    private let storage = Storage.storage()
 
     func fetchAllTVShows(completion: @escaping ([TVShow]) -> Void) {
         db.collection("tvShows").getDocuments { snapshot, error in
@@ -21,12 +23,12 @@ class ServiceManager: ObservableObject {
             }
 
             var tvShows: [TVShow] = []
+            let group = DispatchGroup()
 
             for document in snapshot?.documents ?? [] {
                 let data = document.data()
 
                 var seasonArray: [Season] = []
-
                 if let seasons = data["seasons"] as? [[String: Any]] {
                     for seasonData in seasons {
                         if let seasonObject = self.decodeSeason(data: seasonData) {
@@ -35,17 +37,38 @@ class ServiceManager: ObservableObject {
                     }
                 }
 
-                let tvShow = TVShow(
-                    id: document.documentID,
-                    image: data["image"] as? String ?? "",
-                    title: data["title"] as? String ?? "",
-                    seasons: seasonArray
-                )
+                let tvShowID = document.documentID
+                let storedImageName = data["image"] as? String ?? ""
 
-                tvShows.append(tvShow)
+                group.enter()
+                self.fetchImageURL(imageName: storedImageName) { imageUrl in
+                    let tvShow = TVShow(
+                        id: tvShowID,
+                        image: imageUrl ?? "",
+                        title: data["title"] as? String ?? "",
+                        seasons: seasonArray
+                    )
+
+                    tvShows.append(tvShow)
+                    group.leave()
+                }
             }
 
-            completion(tvShows)
+            group.notify(queue: .main) {
+                completion(tvShows)
+            }
+        }
+    }
+
+    private func fetchImageURL(imageName: String, completion: @escaping (String?) -> Void) {
+        let storageRef = storage.reference().child("tvshow_images/\(imageName)")
+        storageRef.downloadURL { url, error in
+            if let error = error {
+                print("Error fetching image URL: \(error.localizedDescription)")
+                completion(nil)
+            } else {
+                completion(url?.absoluteString)
+            }
         }
     }
 
@@ -104,7 +127,6 @@ class ServiceManager: ObservableObject {
             localAudioname: localAudioname,
             likeCount: likeCount,
             viewCount: viewCount
-            
         )
     }
 }

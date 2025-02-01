@@ -230,14 +230,37 @@ extension UIView {
     }
 }
 
-extension UITabBar {
-    func applyShinyDarkGradient() {
-        let gradientView = UIView(frame: bounds)
-        GradientHelper.applyShinyDarkGradient(to: gradientView)
-        backgroundImage = gradientView.asImage()
+extension Notification.Name {
+    static let favoritesUpdated = Notification.Name("favoritesUpdated")
+}
+
+extension UIColor {
+    static let adjustedWhite = UIColor(red: 0.95, green: 0.95, blue: 0.95, alpha: 1.0)
+}
+
+
+extension UIColor {
+    static var buttonBackground: UIColor {
+        return .init(red: 29/255, green: 182/255, blue: 79/255, alpha: 1)
+    }
+}
+
+extension UIColor {
+    convenience init(hex: String) {
+        var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+        hexSanitized = hexSanitized.replacingOccurrences(of: "#", with: "")
+
+        var rgb: UInt64 = 0
+        Scanner(string: hexSanitized).scanHexInt64(&rgb)
+
+        let r = CGFloat((rgb >> 16) & 0xFF) / 255.0
+        let g = CGFloat((rgb >> 8) & 0xFF) / 255.0
+        let b = CGFloat(rgb & 0xFF) / 255.0
+
+        self.init(red: r, green: g, blue: b, alpha: 1.0)
     }
 }
 
 extension Notification.Name {
-    static let favoritesUpdated = Notification.Name("favoritesUpdated")
+    static let themeChanged = Notification.Name("themeChanged")
 }

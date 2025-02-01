@@ -10,12 +10,13 @@ import UIKit
 class PlayListViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
     var viewModel: PlayListViewModel
     let tableView = UITableView()
+    var onPlaylistSelected: ((Playlist) -> Void)?
     
     init(viewModel: PlayListViewModel) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
@@ -29,17 +30,17 @@ class PlayListViewController: UIViewController, UITableViewDataSource, UITableVi
         }
         GradientHelper.applyGradientBackground(to: tableView)
         setupTableView()
-        loadPlaylists()
+        viewModel.fetchPlaylists { self.tableView.reloadData() }
     }
     
     override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
+            super.viewDidAppear(animated)
 
-        if let sheet = self.navigationController?.sheetPresentationController {
-            sheet.largestUndimmedDetentIdentifier = .large
+            if let sheet = self.navigationController?.sheetPresentationController {
+                sheet.largestUndimmedDetentIdentifier = .large
+            }
+            GradientHelper.applyShinyDarkGradient(to: self.view)
         }
-        GradientHelper.applyShinyDarkGradient(to: self.view)
-    }
     
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
@@ -52,17 +53,13 @@ class PlayListViewController: UIViewController, UITableViewDataSource, UITableVi
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "PlaylistCell")
         tableView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(tableView)
+        
         NSLayoutConstraint.activate([
             tableView.topAnchor.constraint(equalTo: view.topAnchor),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
-    }
-
-    private func loadPlaylists() {
-        viewModel.playlists = PlayListManager.shared.playListArray
-        tableView.reloadData()
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -77,10 +74,10 @@ class PlayListViewController: UIViewController, UITableViewDataSource, UITableVi
         cell.textLabel?.textColor = ThemeManager.shared.uiKitTextColor
         return cell
     }
-
+    
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let selectedPlaylist = viewModel.playlists[indexPath.row]
-        viewModel.addSongToPlaylist(selectedPlaylist)
-        dismiss(animated: true, completion: nil)
+        onPlaylistSelected?(selectedPlaylist)
+        dismiss(animated: true)
     }
 }

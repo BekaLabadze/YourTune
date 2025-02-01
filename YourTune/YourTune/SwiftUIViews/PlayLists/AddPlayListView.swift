@@ -9,54 +9,49 @@ import SwiftUI
 
 struct AddPlayListView: View {
     @EnvironmentObject var themeManager: ThemeManager
-    var playListManager = PlayListManager.shared
-    @Binding var playListArray: [Playlist]
     @Binding var isPresented: Bool
     @State var playListName: String = ""
+    @ObservedObject var viewModel: PlaylistViewModelSwiftUI
 
     var body: some View {
         ZStack {
             themeManager.backgroundGradient
-                .ignoresSafeArea(.all)
+                .ignoresSafeArea()
 
-            VStack {
-                TextField("", text: $playListName, prompt: Text("Enter Playlist Name").foregroundColor(themeManager.textColor))
+            VStack(spacing: 20) {
+                TextField("Enter Playlist Name", text: $playListName)
                     .padding()
                     .foregroundColor(themeManager.textColor)
                     .background(
                         RoundedRectangle(cornerRadius: 12)
-                            .fill(themeManager.isDarkMode ? Color.white.opacity(0.1) : Color.black.opacity(0.1))
+                            .fill(themeManager.isDarkMode ? Color.black.opacity(0.1) : Color.white.opacity(0.1))
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
-                            .stroke(
-                                themeManager.buttonGradient,
-                                lineWidth: 1
-                            )
+                            .stroke(themeManager.buttonGradient, lineWidth: 1)
                     )
-
-                Spacer().frame(height: 50)
+                    .padding(.horizontal)
 
                 Button {
-                    if !playListName.isEmpty && !playListArray.contains(where: { $0.name == playListName }) {
-                        let newPlayList = Playlist(name: playListName)
-                        playListArray.append(newPlayList)
+                    if !playListName.isEmpty {
+                        viewModel.createPlaylist(playListName: playListName) { success in
+                            DispatchQueue.main.async {
+                                if success {
+                                    isPresented = false
+                                }
+                            }
+                        }
                     }
-                    playListName = ""
                 } label: {
                     Text("Save")
                         .font(.headline)
-                        .foregroundColor(themeManager.textColor)
+                        .foregroundColor(.black)
                         .padding()
                         .frame(maxWidth: .infinity)
-                        .background(
-                            themeManager.buttonGradient
-                                .cornerRadius(10)
-                                .shadow(color: .black.opacity(0.4), radius: 5, x: 0, y: 5)
-                        )
+                        .background(themeManager.buttonGradient.cornerRadius(10))
                 }
-
-                Spacer().frame(height: 50)
+                .disabled(viewModel.isSaving)
+                .padding(.horizontal)
 
                 Button {
                     isPresented = false
@@ -66,14 +61,12 @@ struct AddPlayListView: View {
                         .foregroundColor(themeManager.textColor)
                         .padding()
                         .frame(maxWidth: .infinity)
-                        .background(
-                            themeManager.buttonGradient
-                                .cornerRadius(10)
-                                .shadow(color: .black.opacity(0.4), radius: 5, x: 0, y: 5)
-                        )
+                        .background(themeManager.buttonGradient.cornerRadius(10))
                 }
+                .padding(.horizontal)
             }
             .padding()
         }
     }
 }
+

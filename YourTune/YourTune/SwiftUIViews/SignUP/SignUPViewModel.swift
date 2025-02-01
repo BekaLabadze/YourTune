@@ -9,29 +9,146 @@ import Foundation
 import FirebaseAuth
 import FirebaseCore
 import FirebaseFirestore
+import GoogleSignIn
+import SwiftUI
 
 final class SignUpViewModel: ObservableObject {
     @Published var user: User?
     @Published var errorMessage: String?
+    @Published var showNotification: Bool = false
+    @Published var notificationMessage: String = ""
+    @Published var notificationColor: Color = .green
     
     private let db = Firestore.firestore()
     @Published var isAuthenticated = false
     
-    func signUp(email: String, password: String, username: String) {
-        guard validateEmail(email), validatePassword(password), validateUsername(username) else { return }
+    func signUp(email: String, password: String, username: String, completion: @escaping (Bool) -> Void) {
+        guard validateEmail(email), validatePassword(password), validateUsername(username) else {
+            completion(false)
+            return
+        }
+
         Auth.auth().createUser(withEmail: email, password: password) { [weak self] authResult, error in
+            if let error = error {
+                self?.errorMessage = error.localizedDescription
+                completion(false)
+                return
+            }
+
+            guard let userId = authResult?.user.uid else {
+                completion(false)
+                return
+            }
+
+            let userData: [String: Any] = [
+                "email": email,
+                "username": username,
+                "createdAt": Timestamp()
+            ]
+
+            self?.db.collection("users").document(userId).setData(userData) { error in
+                if let error = error {
+                    self?.errorMessage = error.localizedDescription
+                    completion(false)
+                } else {
+                    self?.isAuthenticated = true
+                    self?.fetchUser()
+                    completion(true)
+                }
+            }
+        }
+    }
+
+    func signInWithGoogle(presenting viewController: UIViewController, completion: @escaping (Bool, Error?) -> Void) {
+        guard let clientID = FirebaseApp.app()?.options.clientID else {
+            completion(false, NSError(domain: "Missing Client ID", code: -1, userInfo: nil))
+            return
+        }
+        
+        let config = GIDConfiguration(clientID: clientID)
+        GIDSignIn.sharedInstance.configuration = config
+        
+        GIDSignIn.sharedInstance.signIn(withPresenting: viewController) { signInResult, error in
+            if let error = error {
+                DispatchQueue.main.async {
+                    self.showNotification = true
+                    self.notificationMessage = "Google Sign-In failed"
+                    self.notificationColor = .red
+                }
+                completion(false, error)
+                return
+            }
+            
+            guard let user = signInResult?.user,
+                  let idToken = user.idToken?.tokenString else {
+                DispatchQueue.main.async {
+                    self.showNotification = true
+                    self.notificationMessage = "Google Sign-In failed"
+                    self.notificationColor = .red
+                }
+                completion(false, NSError(domain: "Google Sign-In failed", code: -1, userInfo: nil))
+                return
+            }
+            
+            let credential = GoogleAuthProvider.credential(withIDToken: idToken, accessToken: user.accessToken.tokenString)
+            
+            Auth.auth().signIn(with: credential) { _, error in
+                if let error = error {
+                    DispatchQueue.main.async {
+                        self.showNotification = true
+                        self.notificationMessage = "Sign-In failed"
+                        self.notificationColor = .red
+                    }
+                    completion(false, error)
+                    return
+                }
+                
+                DispatchQueue.main.async {
+                    self.createGoogleUserIfNeeded(user: user)
+                    self.fetchUser()
+                    SessionProvider.shared.fetchFavorites()
+                    self.showNotification = true
+                    self.notificationMessage = "Login Successful!"
+                    self.notificationColor = .green
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        self.showNotification = false
+                        completion(true, nil)
+                    }
+                }
+            }
+        }
+    }
+
+    
+    func createGoogleUserIfNeeded(user: GIDGoogleUser) {
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+        
+        db.collection("users").document(userId).getDocument { [weak self] document, error in
             if let error = error {
                 self?.errorMessage = error.localizedDescription
                 return
             }
-            guard let userId = authResult?.user.uid else { return }
-            let userData: [String: Any] = ["email": email, "username": username, "createdAt": Timestamp()]
-            self?.db.collection("users").document(userId).setData(userData) { error in
-                if let error = error {
-                    self?.errorMessage = error.localizedDescription
-                } else {
-                    self?.isAuthenticated = true
-                    self?.fetchUser()
+            
+            if document?.exists == false {
+                guard let profile = user.profile else {
+                    self?.errorMessage = "Google profile data is missing"
+                    return
+                }
+                
+                let userData: [String: Any] = [
+                    "email": profile.email,
+                    "username": profile.name,
+                    "createdAt": Timestamp()
+                ]
+                
+                self?.db.collection("users").document(userId).setData(userData) { error in
+                    if let error = error {
+                        self?.errorMessage = error.localizedDescription
+                    } else {
+                        self?.isAuthenticated = true
+                        self?.fetchUser()
+                    }
                 }
             }
         }
@@ -80,38 +197,4 @@ final class SignUpViewModel: ObservableObject {
             }
         }
     }
-    
-//    func fetchFavorites() {
-//        guard let userId = Auth.auth().currentUser?.uid else { return }
-//
-//        db.collection("users").document(userId).collection("favorites").getDocuments { [weak self] snapshot, error in
-//            if let error = error {
-//                self?.errorMessage = error.localizedDescription
-//                return
-//            }
-//
-//            guard let documents = snapshot?.documents else { return }
-//            var fetchedFavorites: [Song] = []
-//            for document in documents {
-//                let data = document.data()
-//                if let id = data["id"] as? String,
-//                   let title = data["title"] as? String,
-//                   let artist = data["artist"] as? String,
-//                   let description = data["description"] as? String,
-//                   let localAudioname = data["localAudioname"] as? String {
-//                    let song = Song(
-//                        id: id,
-//                        artist: artist,
-//                        title: title,
-//                        description: description,
-//                        localAudioname: localAudioname
-//                    )
-//                    fetchedFavorites.append(song)
-//                }
-//            }
-//            DispatchQueue.main.async {
-//                self?.favorites = fetchedFavorites
-//            }
-//        }
-//    }
 }

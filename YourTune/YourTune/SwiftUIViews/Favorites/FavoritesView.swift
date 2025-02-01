@@ -10,6 +10,7 @@ import SwiftUI
 struct FavoritesView: View {
     @EnvironmentObject var themeManager: ThemeManager
     @StateObject var viewModel = FavoritesViewModel()
+    @State private var showPlayer: Bool = false
     
     var body: some View {
         ZStack {
@@ -25,26 +26,34 @@ struct FavoritesView: View {
                 if viewModel.favorites.isEmpty {
                     Text("No favorite songs yet!")
                         .font(.headline)
-                        .foregroundColor(themeManager.isDarkMode ? Color.white.opacity(0.7) : Color(red: 0.33, green: 0.33, blue: 0.33))
+                        .foregroundColor(themeManager.isDarkMode ? Color.white : Color.black)
                         .padding()
                         .background(
                             RoundedRectangle(cornerRadius: 12)
-                                .fill(Color(red: 0.22, green: 0.22, blue: 0.22))
+                                .fill(themeManager.isDarkMode ? Color.black.opacity(0.7) : Color.white)
                         )
                         .padding()
                 } else {
                     ScrollView {
                         VStack(spacing: 16) {
                             ForEach(viewModel.favorites, id: \.id) { song in
-                                if let (episodeID, tvShowID) = viewModel.findIDs(for: song) {
+                                let ids = viewModel.findIDs(for: song)
+                                if let episodeID = ids.episodeID, let tvShowID = ids.tvShowID {
                                     FavoritesRow(
                                         song: song,
                                         episodeID: episodeID,
                                         tvShowID: tvShowID,
                                         onPlayTapped: {},
-                                        onRowTapped: {}
+                                        onRowTapped: {
+                                            viewModel.selectedSongs = song
+                                            showPlayer = true
+                                        },
+                                        onHeartTapped: {
+                                            SessionProvider.shared.toggleFavorite(for: song, in: episodeID, of: tvShowID)
+                                            viewModel.fetchFavorites()
+                                        },
+                                        isFavorite: SessionProvider.shared.isFavorite(song)
                                     )
-                                    .padding(.horizontal)
                                 }
                             }
                         }
@@ -54,9 +63,16 @@ struct FavoritesView: View {
 
                 Spacer()
             }
+            .sheet(isPresented: $showPlayer) {
+                if let selectedSong = viewModel.selectedSongs {
+                    PlayerWrapper(selectedSong: selectedSong, songArray: viewModel.favorites)
+                        .ignoresSafeArea()
+                }
+            }
         }
         .onAppear {
             viewModel.fetchTVShows()
+            viewModel.fetchFavorites()
         }
     }
 }

@@ -8,66 +8,109 @@
 import UIKit
 
 class SeasonCell: UITableViewCell {
-    var seasonLabel: UILabel = {
+    private let seasonLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 16, weight: .semibold)
-        label.text = ""
-        label.textColor = .purple
+        label.font = .systemFont(ofSize: 18, weight: .bold)
+        label.textColor = .white
+        label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
-    
-    var seasonImage: UIImageView = {
+
+    private let seasonIcon: UIImageView = {
         let imageView = UIImageView()
+        imageView.image = UIImage(systemName: "tv")
+        imageView.contentMode = .scaleAspectFit
+        imageView.tintColor = .white
         imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.contentMode = .scaleAspectFill
-        imageView.layer.cornerRadius = 10
-        imageView.clipsToBounds = true
         return imageView
     }()
-    
+
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-        contentView.backgroundColor = .clear
-        setupUI()
+        if ThemeManager.shared.isDarkMode {
+            contentView.backgroundColor = .black
+            setupUI()
+        } else {
+            setupCellStyle()
+            setupUI()
+        }
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func setupUI() {
-        seasonLabel.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(seasonImage)
-        contentView.addSubview(seasonLabel)
-        
-        
-        seasonLabel.applyGradientText(with: .shinyDark)
+    private func setupCellStyle() {
+        contentView.backgroundColor = .clear
+        backgroundColor = .clear
 
-        NSLayoutConstraint.activate([
-            contentView.heightAnchor.constraint(equalToConstant: 250),
-            seasonLabel.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-            seasonLabel.topAnchor.constraint(equalTo: seasonImage.bottomAnchor),
-            seasonLabel.heightAnchor.constraint(equalToConstant: 30),
-            
-            seasonImage.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-            seasonImage.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
-            seasonImage.widthAnchor.constraint(equalToConstant: 300),
-            seasonImage.heightAnchor.constraint(equalToConstant: 200)
-        ])
+        layer.cornerRadius = 12
+        layer.masksToBounds = false
+        layer.shadowColor = UIColor.black.cgColor
+        layer.shadowOpacity = 0.1
+        layer.shadowOffset = CGSize(width: 0, height: 3)
+        layer.shadowRadius = 5
+
+        let gradientLayer = ThemeManager.shared.uiKitCellGradient
+        gradientLayer.frame = bounds
+        gradientLayer.cornerRadius = 12
+
+        if let oldGradient = contentView.layer.sublayers?.first(where: { $0 is CAGradientLayer }) {
+            oldGradient.removeFromSuperlayer()
+        }
+
+        contentView.layer.insertSublayer(gradientLayer, at: 0)
     }
     
+    private func setupUI() {
+        contentView.addSubview(seasonIcon)
+        contentView.addSubview(seasonLabel)
+
+        NSLayoutConstraint.activate([
+            contentView.heightAnchor.constraint(equalToConstant: 80),
+
+            seasonIcon.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            seasonIcon.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            seasonIcon.widthAnchor.constraint(equalToConstant: 30),
+            seasonIcon.heightAnchor.constraint(equalToConstant: 30),
+
+            seasonLabel.leadingAnchor.constraint(equalTo: seasonIcon.trailingAnchor, constant: 12),
+            seasonLabel.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            seasonLabel.trailingAnchor.constraint(lessThanOrEqualTo: contentView.trailingAnchor, constant: -16)
+        ])
+    }
+
     override func layoutSubviews() {
         super.layoutSubviews()
-        GradientHelper.applyShinyDarkGradient(to: contentView)
+        if ThemeManager.shared.isDarkMode {
+            applyTheme()
+        } else {
+            setupCellStyle()
+        }
+    }
+
+    private func applyTheme() {
+        let isDarkMode = ThemeManager.shared.isDarkMode
+
+        contentView.layer.sublayers?.removeAll(where: { $0 is CAGradientLayer })
+
+        if isDarkMode {
+            let gradientLayer = ThemeManager.shared.uiKitBackgroundGradient
+            gradientLayer.frame = contentView.bounds
+            contentView.layer.insertSublayer(gradientLayer, at: 0)
+            contentView.backgroundColor = .clear
+        } else {
+            contentView.backgroundColor = .lightGray
+            contentView.layer.sublayers?.removeAll(where: { $0 is CAGradientLayer })
+        }
     }
     
     func configure(_ tvShowObject: TVShow, _ season: Season) {
-        seasonLabel.text = ("Season: \(season.seasonNumber)")
+        seasonLabel.text = "Season \(season.seasonNumber)"
         if ThemeManager.shared.isDarkMode {
-            seasonLabel.textColor = .white
+            applyTheme()
         } else {
             seasonLabel.textColor = .black
         }
-        seasonImage.image = UIImage(named: tvShowObject.image)
     }
 }

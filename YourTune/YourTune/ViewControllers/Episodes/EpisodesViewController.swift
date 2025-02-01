@@ -9,13 +9,12 @@ import UIKit
 
 class EpisodesViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     var viewModel: EpisodesViewModel
-    var userViewModel: UserViewModel?
+    var isFirstColumn: Bool = false
     var episodeCollectionView: UICollectionView?
     private var themeObserver: NSObjectProtocol?
     
-    init(viewModel: EpisodesViewModel, userViewModel: UserViewModel? = nil) {
+    init(viewModel: EpisodesViewModel) {
         self.viewModel = viewModel
-        self.userViewModel = userViewModel
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -65,7 +64,7 @@ class EpisodesViewController: UIViewController, UICollectionViewDataSource, UICo
         NSLayoutConstraint.activate([
             episodeCollectionView.topAnchor.constraint(equalTo: view.topAnchor),
             episodeCollectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            episodeCollectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            episodeCollectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -10),
             episodeCollectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
@@ -92,7 +91,7 @@ class EpisodesViewController: UIViewController, UICollectionViewDataSource, UICo
             view.layer.insertSublayer(gradientLayer, at: 0)
             view.backgroundColor = .clear
         } else {
-            view.backgroundColor = .white
+            view.backgroundColor = .adjustedWhite
             episodeCollectionView?.backgroundColor = .clear
             view.layer.sublayers?.removeAll(where: { $0 is CAGradientLayer })
         }
@@ -115,7 +114,8 @@ class EpisodesViewController: UIViewController, UICollectionViewDataSource, UICo
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: EpisodeCell.reuseIdentifier, for: indexPath) as! EpisodeCell
         let episode = viewModel.getEpisode(index: indexPath.row)
-        cell.configure(episode: episode, tvShowObject: viewModel.tvShowObject)
+        let isFirstColumn = indexPath.item % 2 == 0
+        cell.configure(episode: episode, tvShowObject: viewModel.tvShowObject, isFirstColumn: isFirstColumn)
         return cell
     }
     
@@ -123,14 +123,12 @@ class EpisodesViewController: UIViewController, UICollectionViewDataSource, UICo
         return CGSize(width: (collectionView.frame.width - 30) / 2, height: 320)
 
     }
-
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let songsVC = SongsViewController(
             viewModel: .init(
                 songs: viewModel.season.episodes[indexPath.row].Songs,
-                tvShowObject: viewModel.tvShowObject,
-                userViewModel: userViewModel!
+                tvShowObject: viewModel.tvShowObject
             )
         )
         navigationController?.pushViewController(songsVC, animated: true)

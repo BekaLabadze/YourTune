@@ -6,40 +6,77 @@
 //
 
 import Foundation
+import FirebaseFirestore
+import FirebaseAuth
 
-final class PlayListViewModel {
-    var playlists: [Playlist] = []
-    var selectedSong: Song?
+class PlayListViewModel: ObservableObject {
+    @Published var playlists: [Playlist] = []
     
-    init(playlists: [Playlist] = [], selectedSong: Song?) {
-        self.playlists = playlists
-        self.selectedSong = selectedSong
+    private let db = Firestore.firestore()
+    
+    func fetchPlaylists(completion: @escaping () -> Void) {
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+        let playlistsRef = db.collection("users").document(userId).collection("playlists")
+        
+        playlistsRef.getDocuments { snapshot, error in
+            if let error = error {
+                print("Error fetching playlists: \(error.localizedDescription)")
+                return
+            }
+            
+            guard let documents = snapshot?.documents else { return }
+            self.playlists = documents.compactMap { doc in
+                let data = doc.data()
+                if let name = data["name"] as? String {
+                    return Playlist(id: doc.documentID, name: name)
+                }
+                return nil
+            }
+            completion()
+        }
     }
     
-    
-    func addSongToPlaylist(_ playlist: Playlist) {
-        guard let song = selectedSong else {
-            print("Error: No selected song to add.")
-            return
-        }
+    func addSongToPlaylist(playlistId: String, song: Song, completion: @escaping (Bool) -> Void) {
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+        let playlistRef = db.collection("users").document(userId).collection("playlists").document(playlistId)
 
-        if let index = PlayListManager.shared.playListArray.firstIndex(where: { $0.id == playlist.id }) {
-            var targetPlaylist = PlayListManager.shared.playListArray[index]
-
-            if var songs = targetPlaylist.playListSongs {
-                if !songs.contains(where: { $0.id == song.id }) {
-                    songs.append(song)
-                    targetPlaylist.playListSongs = songs
-                    PlayListManager.shared.playListArray[index] = targetPlaylist
-                } else {
-                    print("Song already exists in the playlist")
-                }
-            } else {
-                targetPlaylist.playListSongs = [song]
-                PlayListManager.shared.playListArray[index] = targetPlaylist
+        playlistRef.getDocument { document, error in
+            if let error = error {
+                print("Error fetching playlist: \(error.localizedDescription)")
+                completion(false)
+                return
             }
-        } else {
-            print("Error: Playlist not found in PlayListManager.")
+
+            guard let document = document, document.exists else {
+                print("Playlist not found")
+                completion(false)
+                return
+            }
+
+            var updatedSongs: [[String: Any]] = []
+            if let existingSongs = document.data()?["songs"] as? [[String: Any]] {
+                updatedSongs = existingSongs
+            }
+
+            let songData: [String: Any] = [
+                "id": song.id,
+                "title": song.title,
+                "artist": song.artist,
+                "preview": song.preview?.absoluteString ?? "",
+                "description": song.description,
+                "album": ["cover": song.album?.cover.absoluteString ?? ""]
+            ]
+
+            updatedSongs.append(songData)
+
+            playlistRef.updateData(["songs": updatedSongs]) { error in
+                if let error = error {
+                    print("Error adding song: \(error.localizedDescription)")
+                    completion(false)
+                } else {
+                    completion(true)
+                }
+            }
         }
     }
 }

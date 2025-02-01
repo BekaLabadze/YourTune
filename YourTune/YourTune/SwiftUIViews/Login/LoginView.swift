@@ -30,14 +30,14 @@ struct LoginView: View {
                                 Text("🎵")
                                     .font(.system(size: 80, weight: .bold, design: .rounded))
                                     .foregroundColor(Color.green)
-                                    .shadow(color: Color.green.opacity(0.6), radius: 10, x: 0, y: 5)
+                                    .shadow(color: themeManager.isDarkMode ? Color.green.opacity(0.6) : Color.black, radius: 10, x: 0, y: 5)
                                     .padding(.top, 65)
                                 Text("Your")
                                     .font(.system(size: 60, weight: .bold, design: .rounded))
-                                    .foregroundColor(Color.white)
+                                    .foregroundColor(themeManager.isDarkMode ? Color.white : Color.black)
                                 Text("Tune")
                                     .font(.system(size: 60, weight: .bold, design: .rounded))
-                                    .foregroundColor(Color.green)
+                                    .foregroundColor(themeManager.isDarkMode ? Color.green : Color.green)
                                     .padding(EdgeInsets(top: 100, leading: -100, bottom: 0, trailing: 0))
                             }
                         }
@@ -46,17 +46,34 @@ struct LoginView: View {
                         Spacer().frame(height: 50)
 
                         VStack(spacing: 16) {
-                            TextField("", text: $email, prompt: Text("Email or username").foregroundColor(Color(red: 0.70, green: 0.70, blue: 0.70)))
+                            TextField("", text: $email, prompt: Text("Email or username")
+                                .foregroundColor(Color(red: 0.70, green: 0.70, blue: 0.70)))
                                 .padding()
-                                .foregroundColor(Color.white)
-                                .background(RoundedRectangle(cornerRadius: 8).fill(Color(red: 0.22, green: 0.22, blue: 0.22)))
-                            
-                            SecureField("", text: $password, prompt: Text("Password").foregroundColor(Color(red: 0.70, green: 0.70, blue: 0.70)))
+                                .foregroundColor(themeManager.isDarkMode ? Color.white : Color.black)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(themeManager.isDarkMode ? Color(red: 0.22, green: 0.22, blue: 0.22) : Color.white)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .stroke(themeManager.isDarkMode ? Color.clear : Color.green, lineWidth: 2)
+                                        )
+                                )
+
+                            SecureField("", text: $password, prompt: Text("Password")
+                                .foregroundColor(Color(red: 0.70, green: 0.70, blue: 0.70)))
                                 .padding()
-                                .foregroundColor(Color.white)
-                                .background(RoundedRectangle(cornerRadius: 8).fill(Color(red: 0.22, green: 0.22, blue: 0.22)))
+                                .foregroundColor(themeManager.isDarkMode ? Color.white : Color.black)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(themeManager.isDarkMode ? Color(red: 0.22, green: 0.22, blue: 0.22) : Color.white)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .stroke(themeManager.isDarkMode ? Color.clear : Color.green, lineWidth: 2)
+                                        )
+                                )
                         }
                         .padding(.horizontal)
+
 
                         if let errorMessage = viewModel.errorMessage {
                             Text(errorMessage)
@@ -143,29 +160,21 @@ struct LoginView: View {
                     }
 
                     if viewModel.showNotification {
-                        ToastView(message: "Login Successful!", backgroundColor: Color.green)
-                            .transition(.move(edge: .top).combined(with: .opacity))
-                            .zIndex(1)
-                            .onAppear {
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                                    withAnimation {
-                                        viewModel.showNotification = false
+                        VStack {
+                            ToastView(message: "Login Successful!", backgroundColor: Color.green)
+                                .transition(.move(edge: .top).combined(with: .opacity))
+                                .zIndex(1)
+                                .onAppear {
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                        withAnimation {
+                                            viewModel.showNotification = false
+                                        }
                                     }
                                 }
-                            }
-                    }
-
-                    if viewModel.failedLogin {
-                        ToastView(message: "Login Failed", backgroundColor: Color.red)
-                            .transition(.move(edge: .top).combined(with: .opacity))
-                            .zIndex(1)
-                            .onAppear {
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                                    withAnimation {
-                                        viewModel.failedLogin = false
-                                    }
-                                }
-                            }
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity)
+                        .edgesIgnoringSafeArea(.top)
                     }
                 }
             }
